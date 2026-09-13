@@ -37,15 +37,15 @@ export function PixelAgentGraph({
       display: "flex",
       flexDirection: "column",
       height: "100%",
-      background: "#0d0d0d",
+      background: "var(--ui-bg)",
     }}>
       {/* Header */}
       <div style={{
         padding: "16px 20px",
-        background: "rgba(26, 26, 26, 0.8)",
+        background: "var(--ui-glass-hover)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+        borderBottom: "1px solid var(--ui-chip-border)",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
@@ -67,10 +67,10 @@ export function PixelAgentGraph({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--ui-fill-2)",
+            border: "1px solid var(--ui-surface-border)",
             borderRadius: 8,
-            color: "var(--ink-3)",
+            color: "var(--ui-text-tertiary)",
             cursor: "pointer",
             transition: "all 0.2s",
           }}>
@@ -82,10 +82,10 @@ export function PixelAgentGraph({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--ui-fill-2)",
+            border: "1px solid var(--ui-surface-border)",
             borderRadius: 8,
-            color: "var(--ink-3)",
+            color: "var(--ui-text-tertiary)",
             cursor: "pointer",
             transition: "all 0.2s",
           }}>
@@ -97,10 +97,10 @@ export function PixelAgentGraph({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--ui-fill-2)",
+            border: "1px solid var(--ui-surface-border)",
             borderRadius: 8,
-            color: "var(--ink-3)",
+            color: "var(--ui-text-tertiary)",
             cursor: "pointer",
             transition: "all 0.2s",
           }}>
@@ -118,8 +118,8 @@ export function PixelAgentGraph({
             inset: 0,
             opacity: 0.08,
             backgroundImage: `
-              linear-gradient(transparent 39px, rgba(124, 58, 237, 0.3) 40px),
-              linear-gradient(90deg, transparent 39px, rgba(124, 58, 237, 0.3) 40px)
+              linear-gradient(transparent 39px, var(--ui-grid-soft) 40px),
+              linear-gradient(90deg, transparent 39px, var(--ui-grid-soft) 40px)
             `,
             backgroundSize: "40px 40px",
           }}
@@ -134,19 +134,19 @@ export function PixelAgentGraph({
                   width: 64,
                   height: 64,
                   borderRadius: 16,
-                  background: "rgba(124, 58, 237, 0.08)",
-                  border: "1px solid rgba(124, 58, 237, 0.15)",
+                  background: "var(--ui-accent-tint-5)",
+                  border: "1px solid var(--ui-accent-border-soft)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   margin: "0 auto 16px",
                 }}>
-                  <Bot size={20} color="#a78bfa" />
+                  <Bot size={20} color="var(--ui-accent)" />
                 </div>
-                <p style={{ fontSize: 14, color: "var(--ink-3)", fontWeight: 500 }}>
+                <p style={{ fontSize: 14, color: "var(--ui-text-tertiary)", fontWeight: 500 }}>
                   {t.noAgents}
                 </p>
-                <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4, fontFamily: '"JetBrains Mono", monospace' }}>
+                <p style={{ fontSize: 12, color: "var(--ui-text-tertiary)", marginTop: 4, fontFamily: '"JetBrains Mono", monospace' }}>
                   {t.deployFirstAgent}
                 </p>
               </div>
@@ -184,7 +184,7 @@ export function PixelAgentGraph({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      background: isSelected ? `${color}20` : "rgba(26, 26, 26, 0.9)",
+                      background: isSelected ? `color-mix(in srgb, ${color} 12.5%, transparent)` : "var(--ui-glass-deep)",
                       border: `2px solid ${isSelected ? color : `${color}40`}`,
                       boxShadow: isSelected ? `0 0 20px ${color}40` : "none",
                       cursor: "pointer",
@@ -209,7 +209,7 @@ export function PixelAgentGraph({
                       height: 14,
                       borderRadius: "50%",
                       background: color,
-                      border: "2px solid #0d0d0d",
+                      border: "2px solid var(--ui-bg)",
                       boxShadow: `0 0 6px ${color}60`,
                     }}
                   />
@@ -226,7 +226,7 @@ export function PixelAgentGraph({
                       fontSize: 12,
                       fontWeight: 500,
                       color: "var(--ink)",
-                      background: "rgba(0,0,0,0.6)",
+                      background: "var(--ui-label-bg)",
                       padding: "2px 8px",
                       borderRadius: 8,
                     }}>
@@ -265,7 +265,7 @@ export function PixelAgentGraph({
                   y1={`${y1}%`}
                   x2={`${x2}%`}
                   y2={`${y2}%`}
-                  stroke="rgba(124, 58, 237, 0.3)"
+                  stroke="var(--ui-grid-soft)"
                   strokeWidth="1.5"
                   strokeDasharray="6,4"
                   initial={{ pathLength: 0, opacity: 0 }}
@@ -281,16 +281,16 @@ export function PixelAgentGraph({
       {/* Footer Stats */}
       <div style={{
         padding: "12px 20px",
-        borderTop: "1px solid rgba(255, 255, 255, 0.06)",
-        background: "rgba(26, 26, 26, 0.6)",
+        borderTop: "1px solid var(--ui-chip-border)",
+        background: "var(--ui-glass-strong)",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
       }}>
-        <span style={{ fontSize: 12, color: "var(--ink-3)", fontFamily: '"JetBrains Mono", monospace' }}>
+        <span style={{ fontSize: 12, color: "var(--ui-text-tertiary)", fontFamily: '"JetBrains Mono", monospace' }}>
           {agents.length} {t.agentCount}
         </span>
-        <span style={{ fontSize: 12, color: "var(--ink-3)", fontFamily: '"JetBrains Mono", monospace' }}>
+        <span style={{ fontSize: 12, color: "var(--ui-text-tertiary)", fontFamily: '"JetBrains Mono", monospace' }}>
           {agents.filter(a => a.status !== "offline").length} {t.active}
         </span>
       </div>

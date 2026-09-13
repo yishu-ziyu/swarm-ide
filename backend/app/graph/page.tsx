@@ -43,8 +43,8 @@ function NetworkIllustration() {
     <svg width="200" height="200" viewBox="0 0 200 200" fill="none" style={{ opacity: 0.3 }}>
       <defs>
         <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--ui-accent)" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="var(--ui-accent)" stopOpacity="0" />
         </radialGradient>
       </defs>
       {/* Nodes */}
@@ -58,7 +58,7 @@ function NetworkIllustration() {
             cx={x}
             cy={y}
             r="6"
-            fill={i % 2 === 0 ? "#a78bfa" : "#34d399"}
+            fill={i % 2 === 0 ? "var(--ui-accent)" : "var(--ui-green)"}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: i * 0.1, type: "spring" }}
@@ -70,7 +70,7 @@ function NetworkIllustration() {
         cx="100"
         cy="100"
         r="10"
-        fill="#a78bfa"
+        fill="var(--ui-accent)"
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.6, type: "spring" }}
@@ -87,7 +87,7 @@ function NetworkIllustration() {
             y1="100"
             x2={x}
             y2={y}
-            stroke="rgba(167, 139, 250, 0.2)"
+            stroke="var(--ui-accent-line-soft)"
             strokeWidth="1"
             strokeDasharray="4,4"
             initial={{ pathLength: 0 }}
@@ -114,10 +114,10 @@ function StatCard({ icon: Icon, label, value, color, delay }: {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay }}
       style={{
-        background: "rgba(26, 26, 26, 0.6)",
+        background: "var(--ui-glass-strong)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
-        border: "1px solid rgba(255, 255, 255, 0.06)",
+        border: "1px solid var(--ui-chip-border)",
         borderRadius: 16,
         padding: 24,
       }}
@@ -127,15 +127,15 @@ function StatCard({ icon: Icon, label, value, color, delay }: {
           width: 36,
           height: 36,
           borderRadius: 8,
-          background: `${color}15`,
+          background: `color-mix(in srgb, ${color} 8.2%, transparent)`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          border: `1px solid ${color}20`,
+          border: `1px solid color-mix(in srgb, ${color} 12.5%, transparent)`,
         }}>
           <Icon size={14} color={color} />
         </div>
-        <span style={{ fontSize: 13, color: "var(--ink-3)", fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: 13, color: "var(--ui-text-tertiary)", fontWeight: 500 }}>{label}</span>
       </div>
       <div style={{
         fontSize: 24,
@@ -163,15 +163,15 @@ function EdgeRow({ edge, fromLabel, toLabel }: {
       style={{
         padding: "14px 18px",
         borderRadius: 16,
-        background: "rgba(26, 26, 26, 0.4)",
-        border: "1px solid rgba(255, 255, 255, 0.05)",
+        background: "var(--ui-glass-subtle)",
+        border: "1px solid var(--ui-line)",
         marginBottom: 8,
         transition: "all 0.2s",
         cursor: "default",
       }}
       whileHover={{
-        background: "rgba(26, 26, 26, 0.7)",
-        borderColor: "rgba(124, 58, 237, 0.15)",
+        background: "var(--ui-glass-soft)",
+        borderColor: "var(--ui-accent-border-soft)",
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
@@ -180,19 +180,19 @@ function EdgeRow({ edge, fromLabel, toLabel }: {
             fontSize: 12,
             fontWeight: 600,
             color: "var(--ink)",
-            background: "rgba(167, 139, 250, 0.1)",
+            background: "var(--ui-accent-tint-2)",
             padding: "2px 8px",
             borderRadius: 8,
             whiteSpace: "nowrap",
           }}>
             {fromLabel}
           </span>
-          <span style={{ color: "var(--ink-3)", fontSize: 12 }}>→</span>
+          <span style={{ color: "var(--ui-text-tertiary)", fontSize: 12 }}>→</span>
           <span style={{
             fontSize: 12,
             fontWeight: 600,
-            color: "#34d399",
-            background: "rgba(52, 211, 153, 0.1)",
+            color: "var(--ui-green)",
+            background: "var(--ui-green-tint)",
             padding: "2px 8px",
             borderRadius: 8,
             whiteSpace: "nowrap",
@@ -212,7 +212,7 @@ function EdgeRow({ edge, fromLabel, toLabel }: {
       </div>
       <div style={{
         fontSize: 12,
-        color: "var(--ink-3)",
+        color: "var(--ui-text-tertiary)",
         fontFamily: "'JetBrains Mono', monospace",
         marginTop: 8,
       }}>
@@ -259,7 +259,7 @@ export default function GraphPage() {
     return (
       <div className="compact-apple" style={{
         minHeight: "100vh",
-        background: "#0d0d0d",
+        background: "var(--ui-bg)",
         color: "var(--ink)",
         padding: 40,
       }}>
@@ -273,16 +273,16 @@ export default function GraphPage() {
             <h1 style={{ margin: "24px 0 12px", fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em" }}>
               {t.agentGraph}
             </h1>
-            <p style={{ color: "var(--ink-3)", marginBottom: 24, fontSize: 14 }}>
+            <p style={{ color: "var(--ui-text-tertiary)", marginBottom: 24, fontSize: 14 }}>
               {t.graphCardDescription}
             </p>
             <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 32 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--ink-3)" }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#a78bfa" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--ui-text-tertiary)" }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--ui-accent)" }} />
                 {t.agentNodes}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--ink-3)" }}>
-                <div style={{ width: 16, height: 1, background: "rgba(167, 139, 250, 0.3)" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--ui-text-tertiary)" }}>
+                <div style={{ width: 16, height: 1, background: "var(--ui-accent-line)" }} />
                 {t.messageConnections}
               </div>
             </div>
@@ -291,7 +291,7 @@ export default function GraphPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            style={{ color: "var(--ink-3)", marginBottom: 20 }}
+            style={{ color: "var(--ui-text-tertiary)", marginBottom: 20 }}
           >
             {t.noWorkspacesTip}
           </motion.p>
@@ -307,13 +307,13 @@ export default function GraphPage() {
                 alignItems: "center",
                 gap: 8,
                 padding: "10px 20px",
-                background: "#7c3aed",
-                color: "white",
+                background: "var(--ui-accent-solid)",
+                color: "var(--ui-on-accent)",
                 borderRadius: 16,
                 fontWeight: 500,
                 fontSize: 14,
                 textDecoration: "none",
-                boxShadow: "0 2px 8px rgba(124, 58, 237, 0.3)",
+                boxShadow: "0 2px 8px var(--ui-accent-shadow)",
               }}
             >
               <MessageSquare size={14} />
@@ -328,7 +328,7 @@ export default function GraphPage() {
   return (
     <div className="compact-apple" style={{
       minHeight: "100vh",
-      background: "#0d0d0d",
+      background: "var(--ui-bg)",
       color: "var(--ink)",
       padding: "40px 24px",
     }}>
@@ -350,19 +350,19 @@ export default function GraphPage() {
               width: 44,
               height: 44,
               borderRadius: 16,
-              background: "rgba(52, 211, 153, 0.1)",
+              background: "var(--ui-green-tint)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              border: "1px solid rgba(52, 211, 153, 0.15)",
+              border: "1px solid var(--ui-green-tint-2)",
             }}>
-              <Network size={20} color="#34d399" />
+              <Network size={20} color="var(--ui-green)" />
             </div>
             <div>
               <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em" }}>
                 {t.agentGraph}
               </h1>
-              <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--ink-3)" }}>
+              <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--ui-text-tertiary)" }}>
                 {t.workspacesTip}
               </p>
             </div>
@@ -376,10 +376,10 @@ export default function GraphPage() {
                 alignItems: "center",
                 gap: 6,
                 padding: "8px 16px",
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: "var(--ui-fill-2)",
+                border: "1px solid var(--ui-surface-border)",
                 borderRadius: 8,
-                color: "var(--ink-3)",
+                color: "var(--ui-text-tertiary)",
                 fontSize: 13,
                 fontWeight: 500,
                 textDecoration: "none",
@@ -398,12 +398,12 @@ export default function GraphPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             style={{
-              background: "rgba(239, 68, 68, 0.08)",
-              border: "1px solid rgba(239, 68, 68, 0.2)",
+              background: "var(--ui-error-bg)",
+              border: "1px solid var(--ui-error-border)",
               borderRadius: 16,
               padding: 16,
               marginBottom: 24,
-              color: "#ef4444",
+              color: "var(--ui-error)",
               fontSize: 13,
             }}
           >
@@ -418,8 +418,8 @@ export default function GraphPage() {
           gap: 12,
           marginBottom: 24,
         }}>
-          <StatCard icon={GitBranch} label={t.edges} value={stats.totalEdges} color="#a78bfa" delay={0.1} />
-          <StatCard icon={Activity} label={t.messages} value={stats.totalMessages} color="#34d399" delay={0.2} />
+          <StatCard icon={GitBranch} label={t.edges} value={stats.totalEdges} color="var(--ui-accent)" delay={0.1} />
+          <StatCard icon={Activity} label={t.messages} value={stats.totalMessages} color="var(--ui-green)" delay={0.2} />
         </div>
 
         {/* Edges List */}
@@ -428,27 +428,27 @@ export default function GraphPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           style={{
-            background: "rgba(26, 26, 26, 0.4)",
-            border: "1px solid rgba(255, 255, 255, 0.06)",
+            background: "var(--ui-glass-subtle)",
+            border: "1px solid var(--ui-chip-border)",
             borderRadius: 16,
             overflow: "hidden",
           }}
         >
           <div style={{
             padding: "18px 24px",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+            borderBottom: "1px solid var(--ui-chip-border)",
             display: "flex",
             alignItems: "center",
             gap: 10,
           }}>
-            <Activity size={14} color="#86868b" />
+            <Activity size={14} color="var(--ui-muted)" />
             <span style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)" }}>
               {t.recentActivity}
             </span>
             <span style={{
               marginLeft: "auto",
               fontSize: 12,
-              color: "var(--ink-3)",
+              color: "var(--ui-text-tertiary)",
               fontFamily: "'JetBrains Mono', monospace",
             }}>
               {edges.length} {t.connections}
@@ -459,7 +459,7 @@ export default function GraphPage() {
               <div style={{
                 textAlign: "center",
                 padding: 48,
-                color: "var(--ink-3)",
+                color: "var(--ui-text-tertiary)",
                 fontSize: 13,
               }}>
                 <motion.div

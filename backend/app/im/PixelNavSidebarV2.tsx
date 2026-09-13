@@ -48,12 +48,12 @@ export function PixelNavSidebarV2({
   };
 
   return (
-    <aside className="w-64 border-r border-[#27272a] bg-[#0c0c0f] flex flex-col p-4 shrink-0 z-40">
+    <aside className="w-64 border-r border-[var(--ui-border-2)] bg-[var(--ui-shell-2)] flex flex-col p-4 shrink-0 z-40">
       {/* Logo Section */}
       {view === "chat" && (
         <div className="flex items-center gap-3 mb-8 px-2">
-          <div className="w-8 h-8 rounded-nav bg-[#a78bfa] flex items-center justify-center">
-            <Hexagon className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 rounded-nav bg-[var(--ui-accent)] flex items-center justify-center">
+            <Hexagon className="w-5 h-5 text-[color:var(--ui-on-accent)]" />
           </div>
           <div>
             <div className="font-bold text-ink text-sm leading-tight">
@@ -73,7 +73,7 @@ export function PixelNavSidebarV2({
       )}
 
       {/* New Session Button */}
-      <button className="w-full bg-[#a78bfa] hover:bg-[#8b5cf6] text-white font-medium py-2 px-4 rounded-full flex items-center justify-center gap-2 mb-6 transition-all">
+      <button className="w-full bg-[var(--ui-accent)] hover:bg-[var(--ui-accent-hover)] text-[color:var(--ui-on-accent)] font-medium py-2 px-4 rounded-full flex items-center justify-center gap-2 mb-6 transition-all">
         <Plus className="w-3.5 h-3.5" />
         {t.newSession}
       </button>
@@ -86,8 +86,8 @@ export function PixelNavSidebarV2({
             onClick={() => handleNavClick(item.id)}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-nav transition-all text-emphasis ${
               item.active
-                ? "bg-[#27272a] text-ink font-semibold"
-                : "text-ink-2 hover:bg-[#18181b] hover:text-ink"
+                ? "bg-[var(--ui-surface-3)] text-ink font-semibold"
+                : "text-ink-2 hover:bg-[var(--ui-surface-2)] hover:text-ink"
             }`}
           >
             {item.icon}
@@ -97,12 +97,12 @@ export function PixelNavSidebarV2({
       </nav>
 
       {/* Bottom Navigation */}
-      <div className="border-t border-[#27272a] pt-4 mt-auto space-y-1">
+      <div className="border-t border-[var(--ui-border-2)] pt-4 mt-auto space-y-1">
         {bottomItems.map((item) => (
           <button
             key={item.id}
             onClick={() => handleNavClick(item.id)}
-            className="w-full flex items-center gap-3 px-3 py-2 text-ink-2 hover:bg-[#18181b] hover:text-ink rounded-nav transition-all text-emphasis"
+            className="w-full flex items-center gap-3 px-3 py-2 text-ink-2 hover:bg-[var(--ui-surface-2)] hover:text-ink rounded-nav transition-all text-emphasis"
           >
             {item.icon}
             <span>{item.label}</span>

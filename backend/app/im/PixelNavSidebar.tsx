@@ -52,29 +52,29 @@ export function PixelNavSidebar({
         width: 240,
         display: "flex",
         flexDirection: "column",
-        background: "rgba(13, 13, 13, 0.95)",
+        background: "var(--ui-shell)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
-        borderRight: "1px solid rgba(255, 255, 255, 0.06)",
+        borderRight: "1px solid var(--ui-chip-border)",
         zIndex: 40,
       }}
     >
       {/* Logo Section */}
-      <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid rgba(255, 255, 255, 0.06)" }}>
+      <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid var(--ui-chip-border)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div
             style={{
               width: 32,
               height: 32,
               borderRadius: 8,
-              background: "rgba(245, 158, 11, 0.1)",
+              background: "var(--ui-amber-tint)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              border: "1px solid rgba(245, 158, 11, 0.15)",
+              border: "1px solid var(--ui-amber-border)",
             }}
           >
-            <Hexagon size={20} color="#f59e0b" />
+            <Hexagon size={20} color="var(--ui-amber)" />
           </div>
           <div>
             <div
@@ -92,7 +92,7 @@ export function PixelNavSidebar({
             <div
               style={{
                 fontSize: 12,
-                color: "var(--ink-3)",
+                color: "var(--ui-text-tertiary)",
                 marginTop: 2,
                 fontFamily: '"JetBrains Mono", monospace',
               }}
@@ -120,8 +120,8 @@ export function PixelNavSidebar({
                 borderRadius: 8,
                 marginBottom: 2,
                 border: "none",
-                background: isActive ? "rgba(167, 139, 250, 0.1)" : "transparent",
-                color: isActive ? "#a78bfa" : "#86868b",
+                background: isActive ? "var(--ui-accent-tint-2)" : "transparent",
+                color: isActive ? "var(--ui-accent)" : "var(--ui-muted)",
                 cursor: "pointer",
                 fontSize: 12,
                 fontWeight: isActive ? 600 : 500,
@@ -135,14 +135,14 @@ export function PixelNavSidebar({
               onClick={() => onNavChange?.(item.id)}
               onMouseEnter={(e) => {
                 if (!isActive) {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-                  e.currentTarget.style.color = "#f5f5f7";
+                  e.currentTarget.style.background = "var(--ui-fill)";
+                  e.currentTarget.style.color = "var(--ink)";
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isActive) {
                   e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "#86868b";
+                  e.currentTarget.style.color = "var(--ui-muted)";
                 }
               }}
               initial={{ opacity: 0, x: -10 }}
@@ -157,25 +157,25 @@ export function PixelNavSidebar({
       </nav>
 
       {/* Deploy Button */}
-      <div style={{ padding: "12px 12px 8px", borderTop: "1px solid rgba(255, 255, 255, 0.06)" }}>
+      <div style={{ padding: "12px 12px 8px", borderTop: "1px solid var(--ui-chip-border)" }}>
         <motion.button
           style={{
             width: "100%",
             padding: "10px 16px",
             borderRadius: 8,
-            background: "#7c3aed",
-            color: "white",
+            background: "var(--ui-accent-solid)",
+            color: "var(--ui-on-accent)",
             border: "none",
             fontSize: 12,
             fontWeight: 600,
             cursor: "pointer",
             fontFamily: '"JetBrains Mono", monospace',
             letterSpacing: "0.03em",
-            boxShadow: "0 2px 8px rgba(124, 58, 237, 0.3)",
+            boxShadow: "0 2px 8px var(--ui-accent-shadow)",
           }}
           whileHover={{
-            background: "#6d28d9",
-            boxShadow: "0 4px 12px rgba(124, 58, 237, 0.4)",
+            background: "var(--ui-accent-solid-hover)",
+            boxShadow: "0 4px 12px var(--ui-accent-shadow-hover)",
             y: -1,
           }}
           whileTap={{ scale: 0.98 }}
@@ -191,7 +191,7 @@ export function PixelNavSidebar({
           padding: "8px 12px",
           display: "flex",
           justifyContent: "space-around",
-          borderTop: "1px solid rgba(255, 255, 255, 0.06)",
+          borderTop: "1px solid var(--ui-chip-border)",
         }}
       >
         {[
@@ -209,7 +209,7 @@ export function PixelNavSidebar({
               borderRadius: 8,
               border: "none",
               background: "transparent",
-              color: "var(--ink-3)",
+              color: "var(--ui-text-tertiary)",
               cursor: "pointer",
               transition: "all 0.2s",
               fontSize: 12,
@@ -218,11 +218,11 @@ export function PixelNavSidebar({
               textTransform: "uppercase",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = "#f5f5f7";
-              e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+              e.currentTarget.style.color = "var(--ink)";
+              e.currentTarget.style.background = "var(--ui-fill)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = "#6b6b6b";
+              e.currentTarget.style.color = "var(--ui-muted-2)";
               e.currentTarget.style.background = "transparent";
             }}
           >

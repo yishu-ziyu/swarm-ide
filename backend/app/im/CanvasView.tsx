@@ -73,10 +73,10 @@ interface CanvasViewProps {
 // ============================================================================
 
 const NODE_COLORS: Record<NodeType, { border: string; bg: string; text: string }> = {
-  master: { border: "#a78bfa", bg: "#121215", text: "#a78bfa" },
-  live: { border: "#34d399", bg: "#121215", text: "#34d399" },
-  doc: { border: "#a1a1aa", bg: "#121215", text: "#a1a1aa" },
-  security: { border: "#ef4444", bg: "#121215", text: "#ef4444" },
+  master: { border: "var(--ui-canvas-accent)", bg: "var(--ui-canvas-surface)", text: "var(--ui-canvas-accent)" },
+  live: { border: "var(--ui-canvas-green)", bg: "var(--ui-canvas-surface)", text: "var(--ui-canvas-green)" },
+  doc: { border: "var(--ui-canvas-doc)", bg: "var(--ui-canvas-surface)", text: "var(--ui-canvas-doc)" },
+  security: { border: "var(--ui-canvas-danger)", bg: "var(--ui-canvas-surface)", text: "var(--ui-canvas-danger)" },
 };
 
 function buildDefaultNodes(t: Translations): CanvasNode[] {
@@ -118,9 +118,9 @@ function buildDefaultNodes(t: Translations): CanvasNode[] {
 }
 
 const DEFAULT_CONNECTIONS: CanvasConnection[] = [
-  { id: "conn-1", from: "node-1", to: "node-2", color: "#a78bfa" },
-  { id: "conn-2", from: "node-2", to: "node-3", color: "#a78bfa" },
-  { id: "conn-3", from: "node-1", to: "node-4", color: "#34d399" },
+  { id: "conn-1", from: "node-1", to: "node-2", color: "var(--ui-canvas-accent)" },
+  { id: "conn-2", from: "node-2", to: "node-3", color: "var(--ui-canvas-accent)" },
+  { id: "conn-3", from: "node-1", to: "node-4", color: "var(--ui-canvas-green)" },
 ];
 
 // ============================================================================
@@ -169,7 +169,7 @@ function MiniMap({
 
   return (
     <div
-      className="absolute bottom-4 right-4 w-[180px] h-[120px] bg-[#09090b]/90 border border-[#27272a] rounded-lg overflow-hidden cursor-pointer"
+      className="absolute bottom-4 right-4 w-[180px] h-[120px] bg-[var(--ui-canvas-deep)] border border-[var(--ui-canvas-border)] rounded-lg overflow-hidden cursor-pointer"
       onClick={handleMiniMapClick}
     >
       {/* Nodes on minimap */}
@@ -187,7 +187,7 @@ function MiniMap({
 
       {/* Viewport indicator */}
       <div
-        className="absolute border border-[#a78bfa]/50 bg-[#a78bfa]/10"
+        className="absolute border border-[var(--ui-canvas-viewport-border)] bg-[var(--ui-canvas-viewport-fill)]"
         style={{
           left: viewportRect.x,
           top: viewportRect.y,
@@ -292,14 +292,14 @@ function MiniChatWidget({
   };
 
   return (
-    <div className="absolute bottom-4 left-4 w-80 bg-[#121215] border border-[#27272a] rounded-card overflow-hidden shadow-2xl">
+    <div className="absolute bottom-4 left-4 w-80 bg-[var(--ui-canvas-surface)] border border-[var(--ui-canvas-border)] rounded-card overflow-hidden shadow-2xl">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-[#27272a] flex items-center justify-between bg-[#18181b]">
-        <span className="text-emphasis font-semibold text-ink">{t.quickChat}</span>
+      <div className="px-4 py-3 border-b border-[var(--ui-canvas-border)] flex items-center justify-between bg-[var(--ui-canvas-surface-2)]">
+        <span className="text-emphasis font-semibold text-[color:var(--ui-canvas-ink)]">{t.quickChat}</span>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setIsMinimized(!isMinimized)}
-            className="p-1 text-ink-2 hover:text-ink transition-colors"
+            className="p-1 text-[color:var(--ui-canvas-ink-2)] hover:text-[color:var(--ui-canvas-ink)] transition-colors"
           >
             {isMinimized ? (
               <Maximize2 className="w-3.5 h-3.5" />
@@ -310,7 +310,7 @@ function MiniChatWidget({
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1 text-ink-2 hover:text-ink transition-colors"
+              className="p-1 text-[color:var(--ui-canvas-ink-2)] hover:text-[color:var(--ui-canvas-ink)] transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -323,7 +323,7 @@ function MiniChatWidget({
         <>
           <div className="h-48 overflow-y-auto p-3 space-y-2 custom-scrollbar">
             {messages.length === 0 && !error && (
-              <div className="text-caption text-ink-2 text-center py-8">
+              <div className="text-caption text-[color:var(--ui-canvas-ink-2)] text-center py-8">
                 {groupId && senderId ? t.noMessages : t.sessionNotReady}
               </div>
             )}
@@ -332,25 +332,25 @@ function MiniChatWidget({
                 key={msg.id}
                 className={`text-caption p-2 rounded-lg ${
                   msg.isUser
-                    ? "bg-[#a78bfa] text-white ml-8"
-                    : "bg-[#18181b] text-ink-2 mr-8"
+                    ? "bg-[var(--ui-accent)] text-[color:var(--ui-on-accent)] ml-8"
+                    : "bg-[var(--ui-canvas-surface-2)] text-[color:var(--ui-canvas-ink-2)] mr-8"
                 }`}
               >
                 {msg.text}
               </div>
             ))}
             {error && (
-              <div className="text-caption p-2 rounded-lg bg-[#450a0a] text-[#fecaca]">
+              <div className="text-caption p-2 rounded-lg bg-[var(--ui-canvas-danger-bg)] text-[color:var(--ui-canvas-danger-text)]">
                 {t.sendFailed} {error}
               </div>
             )}
             {isSending && (
-              <div className="text-caption text-ink-2 text-center">{t.waitingForReply}</div>
+              <div className="text-caption text-[color:var(--ui-canvas-ink-2)] text-center">{t.waitingForReply}</div>
             )}
           </div>
 
           {/* Input */}
-          <div className="p-3 border-t border-[#27272a] flex gap-2">
+          <div className="p-3 border-t border-[var(--ui-canvas-border)] flex gap-2">
             <input
               type="text"
               value={input}
@@ -359,14 +359,14 @@ function MiniChatWidget({
                 if (e.key === "Enter") void handleSend();
               }}
               placeholder={t.newMessage}
-              className="flex-1 bg-[#18181b] border border-[#27272a] rounded-lg px-3 py-2 text-caption text-ink outline-none focus:border-[#a78bfa]"
+              className="flex-1 bg-[var(--ui-canvas-surface-2)] border border-[var(--ui-canvas-border)] rounded-lg px-3 py-2 text-caption text-[color:var(--ui-canvas-ink)] outline-none focus:border-[var(--ui-accent)]"
             />
             <button
               onClick={() => void handleSend()}
               disabled={isSending}
-              className="p-2 bg-[#a78bfa] rounded-lg hover:bg-[#8b5cf6] transition-colors disabled:opacity-50"
+              className="p-2 bg-[var(--ui-accent)] rounded-lg hover:bg-[var(--ui-accent-hover)] transition-colors disabled:opacity-50"
             >
-              <Send className="w-3.5 h-3.5 text-white" />
+              <Send className="w-3.5 h-3.5 text-[color:var(--ui-on-accent)]" />
             </button>
           </div>
         </>
@@ -395,43 +395,43 @@ function CanvasControls({
   const { t } = useLanguage();
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#121215] border border-[#27272a] rounded-lg p-2">
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[var(--ui-canvas-surface)] border border-[var(--ui-canvas-border)] rounded-lg p-2">
       <button
         onClick={onZoomOut}
-        className="p-2 text-ink-2 hover:text-ink hover:bg-[#18181b] rounded-lg transition-colors"
+        className="p-2 text-[color:var(--ui-canvas-ink-2)] hover:text-[color:var(--ui-canvas-ink)] hover:bg-[var(--ui-canvas-surface-2)] rounded-lg transition-colors"
         title={t.zoomOut}
       >
         <ZoomOut className="w-3.5 h-3.5" />
       </button>
 
-      <div className="px-3 text-caption text-ink-2 font-mono min-w-[60px] text-center">
+      <div className="px-3 text-caption text-[color:var(--ui-canvas-ink-2)] font-mono min-w-[60px] text-center">
         {Math.round(transform.scale * 100)}%
       </div>
 
       <button
         onClick={onZoomIn}
-        className="p-2 text-ink-2 hover:text-ink hover:bg-[#18181b] rounded-lg transition-colors"
+        className="p-2 text-[color:var(--ui-canvas-ink-2)] hover:text-[color:var(--ui-canvas-ink)] hover:bg-[var(--ui-canvas-surface-2)] rounded-lg transition-colors"
         title={t.zoomIn}
       >
         <ZoomIn className="w-3.5 h-3.5" />
       </button>
 
-      <div className="w-px h-5 bg-[#27272a]" />
+      <div className="w-px h-5 bg-[var(--ui-canvas-border)]" />
 
       <button
         onClick={onReset}
-        className="p-2 text-ink-2 hover:text-ink hover:bg-[#18181b] rounded-lg transition-colors"
+        className="p-2 text-[color:var(--ui-canvas-ink-2)] hover:text-[color:var(--ui-canvas-ink)] hover:bg-[var(--ui-canvas-surface-2)] rounded-lg transition-colors"
         title={t.resetView}
       >
         <RotateCcw className="w-3.5 h-3.5" />
       </button>
 
-      <div className="w-px h-5 bg-[#27272a]" />
+      <div className="w-px h-5 bg-[var(--ui-canvas-border)]" />
 
       {onAddNode && (
         <button
           onClick={onAddNode}
-          className="p-2 text-ink-2 hover:text-ink hover:bg-[#18181b] rounded-lg transition-colors"
+          className="p-2 text-[color:var(--ui-canvas-ink-2)] hover:text-[color:var(--ui-canvas-ink)] hover:bg-[var(--ui-canvas-surface-2)] rounded-lg transition-colors"
           title={t.addNode}
         >
           <Plus className="w-3.5 h-3.5" />
@@ -460,8 +460,8 @@ function CanvasNodeComponent({
 
   return (
     <div
-      className={`absolute w-48 bg-[#121215] border-2 rounded-card p-4 cursor-grab active:cursor-grabbing select-none transition-shadow ${
-        isSelected ? "shadow-2xl shadow-[#a78bfa]/20" : ""
+      className={`absolute w-48 bg-[var(--ui-canvas-surface)] border-2 rounded-card p-4 cursor-grab active:cursor-grabbing select-none transition-shadow ${
+        isSelected ? "shadow-2xl shadow-[color:var(--ui-canvas-glow)]" : ""
       }`}
       style={{
         left: node.x,
@@ -486,22 +486,22 @@ function CanvasNodeComponent({
       </div>
 
       {/* Node Title */}
-      <h3 className="text-emphasis font-bold text-ink mb-1 truncate">{node.title}</h3>
+      <h3 className="text-emphasis font-bold text-[color:var(--ui-canvas-ink)] mb-1 truncate">{node.title}</h3>
 
       {/* Node Description */}
-      <p className="text-caption text-ink-2 line-clamp-2">{node.description}</p>
+      <p className="text-caption text-[color:var(--ui-canvas-ink-2)] line-clamp-2">{node.description}</p>
 
       {/* Node Data (if any) */}
       {node.data?.tpm && (
-        <div className="mt-3 pt-3 border-t border-[#27272a]">
-          <span className="text-caption text-ink-2">TPM: </span>
-          <span className="text-caption font-mono text-[#34d399]">{node.data.tpm}</span>
+        <div className="mt-3 pt-3 border-t border-[var(--ui-canvas-border)]">
+          <span className="text-caption text-[color:var(--ui-canvas-ink-2)]">TPM: </span>
+          <span className="text-caption font-mono text-[color:var(--ui-canvas-green)]">{node.data.tpm}</span>
         </div>
       )}
 
       {/* Status indicator */}
       <div className="absolute bottom-2 right-2">
-        <div className="w-2 h-2 rounded-full bg-[#34d399] animate-pulse" />
+        <div className="w-2 h-2 rounded-full bg-[var(--ui-canvas-green)] animate-pulse" />
       </div>
     </div>
   );
@@ -663,7 +663,7 @@ export function CanvasView({
   return (
     <div
       ref={canvasRef}
-      className="relative w-full h-full bg-[#09090b] overflow-hidden"
+      className="relative w-full h-full bg-[var(--ui-canvas-deep)] overflow-hidden"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -674,7 +674,7 @@ export function CanvasView({
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage: `
-            radial-gradient(circle, #27272a 1px, transparent 1px)
+            radial-gradient(circle, var(--ui-canvas-border) 1px, transparent 1px)
           `,
           backgroundSize: `${20 * transform.scale}px ${20 * transform.scale}px`,
           backgroundPosition: `${transform.x}px ${transform.y}px`,
@@ -700,7 +700,7 @@ export function CanvasView({
               refY="3.5"
               orient="auto"
             >
-              <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa" />
+              <polygon points="0 0, 10 3.5, 0 7" fill="var(--ui-canvas-accent)" />
             </marker>
           </defs>
 

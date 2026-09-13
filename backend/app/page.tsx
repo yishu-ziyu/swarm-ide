@@ -72,7 +72,7 @@ function ParticleBackground() {
               width: `${width.toFixed(5)}px`,
               height: `${height.toFixed(5)}px`,
               borderRadius: "50%",
-              backgroundColor: "var(--landing-particle)",
+              backgroundColor: "var(--ui-particle)",
               left: `${left.toFixed(4)}%`,
               top: `${top.toFixed(4)}%`,
             }}
@@ -93,7 +93,7 @@ function ParticleBackground() {
       <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.06 }}>
         <defs>
           <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-            <path d="M 60 0 L 0 0 0 60" fill="none" style={{ stroke: "var(--landing-grid)" }} strokeWidth="0.5"/>
+            <path d="M 60 0 L 0 0 0 60" fill="none" style={{ stroke: "var(--ui-grid)" }} strokeWidth="0.5"/>
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#grid)" />
@@ -130,10 +130,10 @@ function FeatureCard({
       <Link href={href} style={{ textDecoration: "none" }}>
         <motion.div
           style={{
-            background: "var(--landing-glass-strong)",
+            background: "var(--ui-glass-strong)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
-            border: "1px solid var(--landing-surface-border)",
+            border: "1px solid var(--ui-surface-border)",
             borderRadius: 20,
             padding: 32,
             cursor: "pointer",
@@ -143,8 +143,8 @@ function FeatureCard({
           whileHover={{
             y: -4,
             boxShadow: isDark
-              ? `0 20px 40px var(--landing-shadow-hover), 0 0 30px color-mix(in srgb, ${color} 12.55%, transparent)`
-              : `0 20px 40px var(--landing-shadow-hover), 0 0 30px color-mix(in srgb, ${color} 20%, transparent)`,
+              ? `0 20px 40px var(--ui-shadow-hover), 0 0 30px color-mix(in srgb, ${color} 12.55%, transparent)`
+              : `0 20px 40px var(--ui-shadow-hover), 0 0 30px color-mix(in srgb, ${color} 20%, transparent)`,
           }}
           whileTap={{ scale: 0.98 }}
           transition={{ duration: 0.3 }}
@@ -177,7 +177,7 @@ function FeatureCard({
           <div style={{
             fontSize: 18,
             fontWeight: 600,
-            color: "var(--landing-text)",
+            color: "var(--ui-text)",
             marginBottom: 8,
             letterSpacing: "-0.01em",
           }}>
@@ -185,7 +185,7 @@ function FeatureCard({
           </div>
           <div style={{
             fontSize: 14,
-            color: "var(--landing-text-secondary)",
+            color: "var(--ui-text-secondary)",
             lineHeight: 1.5,
             marginBottom: 16,
           }}>
@@ -234,12 +234,12 @@ export default function HomePage() {
   }, []);
 
   const isDark = theme === "dark";
-  const bgColor = "var(--landing-bg)";
-  const textPrimary = "var(--landing-text)";
-  const textSecondary = "var(--landing-text-secondary)";
-  const textMuted = "var(--landing-text-muted)";
-  const borderColor = "var(--landing-border)";
-  const accentColor = "var(--landing-accent)";
+  const bgColor = "var(--ui-bg)";
+  const textPrimary = "var(--ui-text)";
+  const textSecondary = "var(--ui-text-secondary)";
+  const textMuted = "var(--ui-text-muted)";
+  const borderColor = "var(--ui-border)";
+  const accentColor = "var(--ui-accent)";
 
   return (
     <div style={{
@@ -255,7 +255,7 @@ export default function HomePage() {
         padding: "80px 24px 60px",
         textAlign: "center",
         overflow: "hidden",
-        background: "linear-gradient(180deg, var(--landing-hero-from) 0%, var(--landing-hero-mid) 40%, var(--landing-hero-to) 100%)",
+        background: "linear-gradient(180deg, var(--ui-hero-from) 0%, var(--ui-hero-mid) 40%, var(--ui-hero-to) 100%)",
       }}>
         <ParticleBackground />
 
@@ -271,8 +271,8 @@ export default function HomePage() {
               gap: 8,
               padding: "8px 16px",
               borderRadius: 100,
-              background: "var(--landing-accent-tint)",
-              border: "1px solid var(--landing-accent-border)",
+              background: "var(--ui-accent-tint)",
+              border: "1px solid var(--ui-accent-border)",
               marginBottom: 32,
               fontSize: 13,
               color: accentColor,
@@ -348,8 +348,8 @@ export default function HomePage() {
                 gap: 10,
                 padding: "10px 20px",
                 borderRadius: 12,
-                background: "var(--landing-chip-bg)",
-                border: "1px solid var(--landing-chip-border)",
+                background: "var(--ui-chip-bg)",
+                border: "1px solid var(--ui-chip-border)",
               }}>
                 <Icon size={16} color={accentColor} />
                 <span style={{ fontSize: 13, color: textMuted }}>{label}</span>
@@ -394,7 +394,7 @@ export default function HomePage() {
             icon={MessageSquare}
             title={t.openIM}
             description={t.imCardDescription}
-            color="var(--landing-accent)"
+            color="var(--ui-accent)"
             delay={2.2}
           />
           <FeatureCard
@@ -402,7 +402,7 @@ export default function HomePage() {
             icon={Network}
             title={t.openGraph}
             description={t.graphCardDescription}
-            color="var(--landing-accent-green)"
+            color="var(--ui-accent-green)"
             delay={2.4}
           />
         </div>
@@ -414,17 +414,17 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 2.6 }}
             style={{
-              background: "var(--landing-error-bg)",
-              border: "1px solid var(--landing-error-border)",
+              background: "var(--ui-error-bg)",
+              border: "1px solid var(--ui-error-border)",
               padding: 24,
               marginBottom: 32,
               borderRadius: 16,
             }}
           >
-            <div style={{ fontWeight: 600, marginBottom: 8, color: "var(--landing-error)", fontSize: 14 }}>
+            <div style={{ fontWeight: 600, marginBottom: 8, color: "var(--ui-error)", fontSize: 14 }}>
               {t.databaseNotReady}
             </div>
-            <div style={{ whiteSpace: "pre-wrap", fontSize: 13, color: "var(--landing-error)", fontFamily: '"JetBrains Mono", monospace' }}>
+            <div style={{ whiteSpace: "pre-wrap", fontSize: 13, color: "var(--ui-error)", fontFamily: '"JetBrains Mono", monospace' }}>
               {dbError}
             </div>
           </motion.div>
@@ -435,7 +435,7 @@ export default function HomePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 2.6 }}
           style={{
-            background: "var(--landing-glass-strong)",
+            background: "var(--ui-glass-strong)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: `1px solid ${borderColor}`,
@@ -475,7 +475,7 @@ export default function HomePage() {
             </div>
           ) : workspaces.length === 0 ? (
             <div style={{
-              background: "var(--landing-glass-subtle)",
+              background: "var(--ui-glass-subtle)",
               border: `1px solid ${borderColor}`,
               borderRadius: 16,
               padding: 48,
@@ -501,15 +501,15 @@ export default function HomePage() {
                   <Link href={`/im?workspaceId=${encodeURIComponent(w.id)}`} style={{ textDecoration: "none" }}>
                     <motion.div
                       style={{
-                        background: "var(--landing-glass)",
+                        background: "var(--ui-glass)",
                         border: `1px solid ${borderColor}`,
                         borderRadius: 14,
                         padding: 18,
                         cursor: "pointer",
                       }}
                       whileHover={{
-                        background: "var(--landing-glass-hover)",
-                        borderColor: "var(--landing-accent-border-strong)",
+                        background: "var(--ui-glass-hover)",
+                        borderColor: "var(--ui-accent-border-strong)",
                         y: -2,
                       }}
                       transition={{ duration: 0.2 }}
@@ -524,11 +524,11 @@ export default function HomePage() {
                           width: 36,
                           height: 36,
                           borderRadius: 10,
-                          background: "var(--landing-accent-tint)",
+                          background: "var(--ui-accent-tint)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          border: "1px solid var(--landing-accent-border-soft)",
+                          border: "1px solid var(--ui-accent-border-soft)",
                         }}>
                           <MessageSquare size={16} color={accentColor} />
                         </div>
@@ -564,7 +564,7 @@ export default function HomePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 3.2 }}
           style={{
-            background: "var(--landing-glass-subtle)",
+            background: "var(--ui-glass-subtle)",
             border: `1px solid ${borderColor}`,
             borderRadius: 20,
             padding: 24,

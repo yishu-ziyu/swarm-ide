@@ -113,7 +113,7 @@ export function IMShell({
         {
           "--left-width": `${currentLeftWidth}px`,
           "--right-width": `${currentRightWidth}px`,
-          background: "#0d0d0d",
+          background: "var(--ui-bg)",
         } as React.CSSProperties
       }
     >
@@ -130,15 +130,15 @@ export function IMShell({
         <div
           className={`hidden md:block w-px cursor-col-resize flex-shrink-0 transition-colors duration-200 ${
             isDraggingLeft || isDraggingRight
-              ? "bg-[#a78bfa]"
-              : "bg-[#2a2a2a] hover:bg-[#3a3a3a]"
+              ? "bg-[var(--ui-accent)]"
+              : "bg-[var(--ui-border)] hover:bg-[var(--ui-border-4)]"
           }`}
           onPointerDown={handleLeftDragStart}
         />
       )}
 
       {isMidVisible && (
-        <div className="flex-1 h-full overflow-hidden min-w-0 bg-[#0d0d0d]">
+        <div className="flex-1 h-full overflow-hidden min-w-0 bg-[var(--ui-bg)]">
           {mid}
         </div>
       )}
@@ -147,8 +147,8 @@ export function IMShell({
         <div
           className={`w-px cursor-col-resize flex-shrink-0 transition-colors duration-200 ${
             isDraggingLeft || isDraggingRight
-              ? "bg-[#a78bfa]"
-              : "bg-[#2a2a2a] hover:bg-[#3a3a3a]"
+              ? "bg-[var(--ui-accent)]"
+              : "bg-[var(--ui-border)] hover:bg-[var(--ui-border-4)]"
           }`}
           onPointerDown={handleRightDragStart}
         />
@@ -165,7 +165,7 @@ export function IMShell({
 
       {focusMode !== "none" && (
         <button
-          className="fixed top-4 right-4 z-50 px-4 py-2 text-caption font-medium bg-[#ef4444] text-white rounded-lg shadow-lg hover:bg-[#dc2626] transition-all"
+          className="fixed top-4 right-4 z-50 px-4 py-2 text-caption font-medium bg-[var(--ui-error)] text-[var(--ui-on-accent)] rounded-lg shadow-lg hover:bg-[var(--ui-danger-strong)] transition-all"
           style={{ fontFamily: '"JetBrains Mono", monospace' }}
           onClick={() => onFocusModeChange?.("none")}
         >
@@ -176,17 +176,17 @@ export function IMShell({
       <div
         className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex gap-1 p-1 rounded-card"
         style={{
-          background: "rgba(26, 26, 26, 0.8)",
+          background: "var(--ui-glass-hover)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
-          border: "1px solid rgba(255, 255, 255, 0.06)",
+          border: "1px solid var(--ui-chip-border)",
         }}
       >
         <button
           className={`px-3 py-2 text-caption font-medium rounded-lg transition-all ${
             focusMode === "left"
-              ? "bg-[#a78bfa] text-white"
-              : "bg-transparent text-ink-3 hover:bg-[rgba(255,255,255,0.04)] hover:text-ink"
+              ? "bg-[var(--ui-accent)] text-[var(--ui-on-accent)]"
+              : "bg-transparent text-[color:var(--ui-text-tertiary)] hover:bg-[var(--ui-fill)] hover:text-ink"
           }`}
           style={{ fontFamily: '"JetBrains Mono", monospace' }}
           onClick={() => toggleFocusMode("left")}
@@ -196,8 +196,8 @@ export function IMShell({
         <button
           className={`px-3 py-2 text-caption font-medium rounded-lg transition-all ${
             focusMode === "mid"
-              ? "bg-[#a78bfa] text-white"
-              : "bg-transparent text-ink-3 hover:bg-[rgba(255,255,255,0.04)] hover:text-ink"
+              ? "bg-[var(--ui-accent)] text-[var(--ui-on-accent)]"
+              : "bg-transparent text-[color:var(--ui-text-tertiary)] hover:bg-[var(--ui-fill)] hover:text-ink"
           }`}
           style={{ fontFamily: '"JetBrains Mono", monospace' }}
           onClick={() => toggleFocusMode("mid")}
@@ -207,8 +207,8 @@ export function IMShell({
         <button
           className={`px-3 py-2 text-caption font-medium rounded-lg transition-all ${
             focusMode === "right"
-              ? "bg-[#a78bfa] text-white"
-              : "bg-transparent text-ink-3 hover:bg-[rgba(255,255,255,0.04)] hover:text-ink"
+              ? "bg-[var(--ui-accent)] text-[var(--ui-on-accent)]"
+              : "bg-transparent text-[color:var(--ui-text-tertiary)] hover:bg-[var(--ui-fill)] hover:text-ink"
           }`}
           style={{ fontFamily: '"JetBrains Mono", monospace' }}
           onClick={() => toggleFocusMode("right")}

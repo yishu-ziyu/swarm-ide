@@ -1695,17 +1695,17 @@ function IMPageInner() {
           <div style={{ marginTop: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, marginBottom: 2 }}>
               <span className="muted">{t.context}</span>
-              <span className="mono" style={{ color: (g.contextTokens / tokenLimit) > 0.8 ? "#ef4444" : (g.contextTokens / tokenLimit) > 0.5 ? "#facc15" : "#22c55e" }}>
+              <span className="mono" style={{ color: (g.contextTokens / tokenLimit) > 0.8 ? "var(--ui-error)" : (g.contextTokens / tokenLimit) > 0.5 ? "var(--ui-amber-strong)" : "var(--ui-green-strong)" }}>
                 {g.contextTokens.toLocaleString()}
                 <span className="muted" style={{ marginLeft: 4 }}>/ {tokenLimit.toLocaleString()}</span>
               </span>
             </div>
-            <div style={{ height: 3, background: "#27272a", borderRadius: 8, overflow: "hidden" }}>
+            <div style={{ height: 3, background: "var(--ui-surface-3)", borderRadius: 8, overflow: "hidden" }}>
               <div
                 style={{
                   height: "100%",
                   width: `${Math.min(100, (g.contextTokens / tokenLimit) * 100)}%`,
-                  background: (g.contextTokens / tokenLimit) > 0.8 ? "#ef4444" : (g.contextTokens / tokenLimit) > 0.5 ? "#facc15" : "#22c55e",
+                  background: (g.contextTokens / tokenLimit) > 0.8 ? "var(--ui-error)" : (g.contextTokens / tokenLimit) > 0.5 ? "var(--ui-amber-strong)" : "var(--ui-green-strong)",
                   borderRadius: 8,
                   transition: "width 0.3s ease",
                 }}
@@ -1778,9 +1778,9 @@ function IMPageInner() {
               style={{
                 padding: "4px 10px",
                 fontSize: 12,
-                borderColor: "#7f1d1d",
-                background: stoppingAgents ? "#450a0a" : "#1f0b0b",
-                color: "#fecaca",
+                borderColor: "var(--ui-danger-deep)",
+                background: stoppingAgents ? "var(--ui-danger-bg-active)" : "var(--ui-danger-bg)",
+                color: "var(--ui-danger-text)",
               }}
               onClick={() => void onInterruptAllAgents()}
               disabled={!session || stoppingAgents}
@@ -1809,7 +1809,7 @@ function IMPageInner() {
               id: b.id,
               from: b.fromId,
               to: b.toId,
-              color: b.kind === "create" ? "#34d399" : "#a78bfa",
+              color: b.kind === "create" ? "var(--ui-canvas-green)" : "var(--ui-canvas-accent)",
             }))}
             onNodeClick={(id) => console.log("Node clicked:", id)}
             chatGroupId={activeGroupId}
@@ -1848,9 +1848,9 @@ function IMPageInner() {
               style={{
                 position: "relative",
                 minHeight: 200,
-                borderTop: "1px solid #27272a",
+                borderTop: "1px solid var(--ui-canvas-border)",
                 background:
-                  "radial-gradient(circle at 20% 20%, rgba(56,189,248,0.12), transparent 40%), radial-gradient(circle at 80% 70%, rgba(34,197,94,0.12), transparent 45%), linear-gradient(transparent 23px, rgba(39,39,42,0.35) 24px), linear-gradient(90deg, transparent 23px, rgba(39,39,42,0.35) 24px), #050505",
+                  "radial-gradient(circle at 20% 20%, var(--ui-canvas-glow-sky), transparent 40%), radial-gradient(circle at 80% 70%, var(--ui-canvas-glow-green), transparent 45%), linear-gradient(transparent 23px, var(--ui-canvas-grid) 24px), linear-gradient(90deg, transparent 23px, var(--ui-canvas-grid) 24px), var(--ui-canvas)",
                 backgroundSize: "24px 24px, 24px 24px, 24px 24px, 24px 24px, auto",
                 cursor: vizIsPanning ? "grabbing" : "grab",
                 overflow: "hidden",
@@ -1885,43 +1885,43 @@ function IMPageInner() {
                   alignItems: "center",
                   padding: "6px 12px",
                   borderRadius: 16,
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  background: "rgba(26, 26, 26, 0.7)",
+                  border: "1px solid var(--ui-canvas-line)",
+                  background: "var(--ui-canvas-panel)",
                   backdropFilter: "blur(12px)",
                   WebkitBackdropFilter: "blur(12px)",
                   fontSize: 12,
-                  color: "var(--ink-2)",
+                  color: "var(--ui-canvas-ink-2)",
                   fontFamily: "'JetBrains Mono', monospace",
                   boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
                 }}
               >
-                <span style={{ color: "var(--ink)", fontWeight: 600, minWidth: 56 }}>
+                <span style={{ color: "var(--ui-canvas-ink)", fontWeight: 600, minWidth: 56 }}>
                   {Math.round(vizScale * 100)}%
                 </span>
-                <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)", margin: "0 4px" }} />
+                <div style={{ width: 1, height: 16, background: "var(--ui-canvas-line)", margin: "0 4px" }} />
                 <button
                   style={{
                     padding: "4px 10px",
                     fontSize: 13,
                     fontWeight: 600,
                     borderRadius: 8,
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    background: "rgba(255,255,255,0.04)",
-                    color: "var(--ink)",
+                    border: "1px solid var(--ui-canvas-line)",
+                    background: "var(--ui-canvas-fill)",
+                    color: "var(--ui-canvas-ink)",
                     cursor: "pointer",
                     transition: "all 0.15s ease",
                     fontFamily: "'JetBrains Mono', monospace",
                     lineHeight: 1,
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(167, 139, 250, 0.15)";
-                    e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.3)";
-                    e.currentTarget.style.color = "#a78bfa";
+                    e.currentTarget.style.background = "var(--ui-canvas-hover-fill)";
+                    e.currentTarget.style.borderColor = "var(--ui-canvas-hover-border)";
+                    e.currentTarget.style.color = "var(--ui-canvas-accent)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-                    e.currentTarget.style.color = "#e4e4e7";
+                    e.currentTarget.style.background = "var(--ui-canvas-fill)";
+                    e.currentTarget.style.borderColor = "var(--ui-canvas-line)";
+                    e.currentTarget.style.color = "var(--ui-canvas-ink-alt)";
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1936,23 +1936,23 @@ function IMPageInner() {
                     fontSize: 13,
                     fontWeight: 600,
                     borderRadius: 8,
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    background: "rgba(255,255,255,0.04)",
-                    color: "var(--ink)",
+                    border: "1px solid var(--ui-canvas-line)",
+                    background: "var(--ui-canvas-fill)",
+                    color: "var(--ui-canvas-ink)",
                     cursor: "pointer",
                     transition: "all 0.15s ease",
                     fontFamily: "'JetBrains Mono', monospace",
                     lineHeight: 1,
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(167, 139, 250, 0.15)";
-                    e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.3)";
-                    e.currentTarget.style.color = "#a78bfa";
+                    e.currentTarget.style.background = "var(--ui-canvas-hover-fill)";
+                    e.currentTarget.style.borderColor = "var(--ui-canvas-hover-border)";
+                    e.currentTarget.style.color = "var(--ui-canvas-accent)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-                    e.currentTarget.style.color = "#e4e4e7";
+                    e.currentTarget.style.background = "var(--ui-canvas-fill)";
+                    e.currentTarget.style.borderColor = "var(--ui-canvas-line)";
+                    e.currentTarget.style.color = "var(--ui-canvas-ink-alt)";
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1967,23 +1967,23 @@ function IMPageInner() {
                     fontSize: 12,
                     fontWeight: 500,
                     borderRadius: 8,
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    background: "rgba(255,255,255,0.04)",
-                    color: "var(--ink)",
+                    border: "1px solid var(--ui-canvas-line)",
+                    background: "var(--ui-canvas-fill)",
+                    color: "var(--ui-canvas-ink)",
                     cursor: "pointer",
                     transition: "all 0.15s ease",
                     fontFamily: "'JetBrains Mono', monospace",
                     lineHeight: 1,
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(167, 139, 250, 0.15)";
-                    e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.3)";
-                    e.currentTarget.style.color = "#a78bfa";
+                    e.currentTarget.style.background = "var(--ui-canvas-hover-fill)";
+                    e.currentTarget.style.borderColor = "var(--ui-canvas-hover-border)";
+                    e.currentTarget.style.color = "var(--ui-canvas-accent)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-                    e.currentTarget.style.color = "#e4e4e7";
+                    e.currentTarget.style.background = "var(--ui-canvas-fill)";
+                    e.currentTarget.style.borderColor = "var(--ui-canvas-line)";
+                    e.currentTarget.style.color = "var(--ui-canvas-ink-alt)";
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1993,8 +1993,8 @@ function IMPageInner() {
                 >
                   {t.reset}
                 </button>
-                <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)", margin: "0 4px" }} />
-                <span style={{ fontSize: 12, color: "var(--ink-3)" }}>{t.scrollZoomHint}</span>
+                <div style={{ width: 1, height: 16, background: "var(--ui-canvas-line)", margin: "0 4px" }} />
+                <span style={{ fontSize: 12, color: "var(--ui-canvas-ink-2)" }}>{t.scrollZoomHint}</span>
               </div>
 
               <div
@@ -2022,7 +2022,7 @@ function IMPageInner() {
                         <path
                           key={`${edge.fromId}-${edge.toId}`}
                           d={path}
-                          stroke="rgba(148,163,184,0.35)"
+                          stroke="var(--ui-canvas-edge)"
                           strokeWidth={1.2}
                           fill="none"
                         />
@@ -2074,12 +2074,12 @@ function IMPageInner() {
                                 style={{
                                   fontSize: 12,
                                   fontWeight: 700,
-                                  color: beam.kind === "create" ? "#bfdbfe" : "#e4e4e7",
-                                  border: `1px solid ${beam.kind === "create" ? "rgba(59,130,246,0.5)" : "rgba(82,82,91,0.5)"}`,
+                                  color: beam.kind === "create" ? "var(--ui-canvas-beam-create-ink)" : "var(--ui-canvas-ink)",
+                                  border: `1px solid ${beam.kind === "create" ? "var(--ui-canvas-beam-create-border)" : "var(--ui-canvas-beam-border)"}`,
                                   background:
                                     beam.kind === "create"
-                                      ? "rgba(30,58,138,0.6)"
-                                      : "rgba(9,9,11,0.7)",
+                                      ? "var(--ui-canvas-beam-create-bg)"
+                                      : "var(--ui-canvas-beam-bg)",
                                   borderRadius: 999,
                                   padding: "4px 8px",
                                   textAlign: "center",
@@ -2146,7 +2146,7 @@ function IMPageInner() {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          background: "rgba(5,5,5,0.9)",
+                          background: "var(--ui-canvas-node)",
                           boxShadow: `0 0 30px ${ring}55`,
                           position: "relative",
                         }}
@@ -2160,7 +2160,7 @@ function IMPageInner() {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            background: "rgba(0,0,0,0.6)",
+                            background: "var(--ui-canvas-node-2)",
                           }}
                         >
                           <Icon size={20} color={isHuman ? "#f8fafc" : "#e4e4e7"} />
@@ -2190,7 +2190,7 @@ function IMPageInner() {
                           width: 120,
                           fontSize: 12,
                           fontWeight: 700,
-                          color: "var(--ink)",
+                          color: "var(--ui-canvas-ink)",
                         }}
                       >
                         {agent.role}
@@ -2231,7 +2231,7 @@ function IMPageInner() {
                           style={{
                             marginBottom: 8,
                             paddingBottom: 8,
-                            borderBottom: "1px solid rgba(39,39,42,0.6)",
+                            borderBottom: "1px solid var(--ui-canvas-divider)",
                           }}
                         >
                           <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
@@ -2315,8 +2315,8 @@ function IMPageInner() {
             onAgentClick={(id) => console.log("Agent clicked:", id)}
           />
           {isSettingsOpen && (
-            <div className="modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
-              <div className="card" style={{ width: 460, maxWidth: "100%", background: "#18181b", padding: 24, borderRadius: 8 }}>
+            <div className="modal-overlay" style={{ position: "fixed", inset: 0, background: "var(--ui-overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
+              <div className="card" style={{ width: 460, maxWidth: "100%", background: "var(--ui-surface)", padding: 24, borderRadius: 8 }}>
                 <div style={{ fontWeight: 700, fontSize: 24, marginBottom: 16 }}>{t.llmProviderSettings}</div>
                 <div style={{ marginBottom: 12 }}>
                   <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.provider}</label>
@@ -2324,7 +2324,7 @@ function IMPageInner() {
                     className="input"
                     value={appSettings?.llmProvider || "minimax"}
                     onChange={(e) => setAppSettings({ ...appSettings, llmProvider: e.target.value as AppSettings["llmProvider"] })}
-                    style={{ width: "100%", padding: "8px 12px", background: "#27272a", color: "var(--ink)", border: "1px solid #3f3f46", borderRadius: 8 }}
+                    style={{ width: "100%", padding: "8px 12px", background: "var(--ui-surface-3)", color: "var(--ink)", border: "1px solid var(--ui-border-3)", borderRadius: 8 }}
                   >
                     <option value="minimax">MiniMax</option>
                     <option value="ark">Ark (Volcengine)</option>

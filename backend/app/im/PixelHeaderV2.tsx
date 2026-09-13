@@ -26,13 +26,13 @@ export function PixelHeaderV2({
   const { t } = useLanguage();
 
   return (
-    <header className="h-14 border-b border-[#27272a] bg-[#09090b]/80 backdrop-blur flex items-center justify-between px-6 shrink-0 z-50">
+    <header className="h-14 border-b border-[var(--ui-border-2)] bg-[var(--ui-topbar-2)] backdrop-blur flex items-center justify-between px-6 shrink-0 z-50">
       {/* Left Section - Logo and Nav */}
       <div className="flex items-center gap-8">
         {/* Logo */}
         <div className="text-title font-semibold tracking-tight text-ink flex items-center gap-2">
-          <div className="w-5 h-5 rounded-nav bg-[#a78bfa] flex items-center justify-center">
-            <Hexagon className="w-3.5 h-3.5 text-white" />
+          <div className="w-5 h-5 rounded-nav bg-[var(--ui-accent)] flex items-center justify-center">
+            <Hexagon className="w-3.5 h-3.5 text-[color:var(--ui-on-accent)]" />
           </div>
           Swarm-IDE
         </div>
@@ -43,7 +43,7 @@ export function PixelHeaderV2({
             onClick={() => onViewChange("chat")}
             className={`pb-1 border-b-2 transition-colors ${
               view === "chat"
-                ? "text-ink border-[#a78bfa]"
+                ? "text-ink border-[var(--ui-accent)]"
                 : "text-ink-2 border-transparent hover:text-ink"
             }`}
           >
@@ -53,7 +53,7 @@ export function PixelHeaderV2({
             onClick={() => onViewChange("canvas")}
             className={`pb-1 border-b-2 transition-colors ${
               view === "canvas"
-                ? "text-ink border-[#a78bfa]"
+                ? "text-ink border-[var(--ui-accent)]"
                 : "text-ink-2 border-transparent hover:text-ink"
             }`}
           >
@@ -66,7 +66,7 @@ export function PixelHeaderV2({
       <div className="flex items-center gap-4">
         {/* Search Bar - Only visible on Canvas view */}
         {view === "canvas" && (
-          <div className="flex items-center bg-[#121215] rounded-lg px-3 py-1.5 border border-[#27272a]">
+          <div className="flex items-center bg-[var(--ui-surface)] rounded-lg px-3 py-1.5 border border-[var(--ui-border-2)]">
             <Search className="w-3.5 h-3.5 text-ink-2 mr-2" />
             <input
               type="text"
@@ -79,26 +79,26 @@ export function PixelHeaderV2({
 
         {/* Chat Search - visible on Chat view */}
         {view === "chat" && (
-          <button className="p-2 text-ink-2 hover:bg-[#18181b] rounded-nav transition-colors">
+          <button className="p-2 text-ink-2 hover:bg-[var(--ui-surface-2)] rounded-nav transition-colors">
             <Search className="w-5 h-5" />
           </button>
         )}
 
         {/* Help Button */}
-        <button className="p-2 text-ink-2 hover:bg-[#18181b] rounded-nav transition-colors">
+        <button className="p-2 text-ink-2 hover:bg-[var(--ui-surface-2)] rounded-nav transition-colors">
           <HelpCircle className="w-5 h-5" />
         </button>
 
         {/* Settings Button */}
         <button
-          className="p-2 text-ink-2 hover:bg-[#18181b] rounded-nav transition-colors"
+          className="p-2 text-ink-2 hover:bg-[var(--ui-surface-2)] rounded-nav transition-colors"
           onClick={onSettings}
         >
           <Settings className="w-5 h-5" />
         </button>
 
         {/* User Avatar */}
-        <div className="w-8 h-8 rounded-full border border-[#27272a] bg-[#18181b] flex items-center justify-center overflow-hidden">
+        <div className="w-8 h-8 rounded-full border border-[var(--ui-border-2)] bg-[var(--ui-surface-2)] flex items-center justify-center overflow-hidden">
           <User className="w-3.5 h-3.5 text-ink-2" />
         </div>
       </div>

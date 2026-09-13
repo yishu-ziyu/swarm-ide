@@ -303,85 +303,276 @@
   color-scheme: dark;
 }
 
-/* ==================== LANDING PAGE THEME SYSTEM ==================== */
+/* ==================== SHARED UI THEME SYSTEM (--ui-*) ==================== */
 /* Light values are the :root default; dark values are overridden below.
-   Dark values are locked to the landing page's former hard-coded literals
-   (zero visual regression); light values mirror the apple theme palette. */
+   Dark values are locked to the former hard-coded literals
+   (zero visual regression); light values mirror the apple theme palette.
+   Used by the home page and by /graph + /im for every surface/border/accent. */
 :root {
-  --landing-bg: #f5f5f7;
-  --landing-text: #1d1d1f;
-  --landing-text-secondary: #86868b;
-  --landing-text-muted: #a1a1aa;
-  --landing-border: #e5e5e7;
-  --landing-accent: #7c3aed;
-  --landing-accent-green: #10b981;
+  --ui-bg: #f5f5f7;
+  --ui-text: #1d1d1f;
+  --ui-text-secondary: #86868b;
+  --ui-text-muted: #a1a1aa;
+  --ui-border: #e5e5e7;
+  --ui-accent: #7c3aed;
+  --ui-accent-green: #10b981;
 
-  --landing-hero-from: #f5f5f7;
-  --landing-hero-mid: #ede9fe;
-  --landing-hero-to: #f5f5f7;
+  --ui-hero-from: #f5f5f7;
+  --ui-hero-mid: #ede9fe;
+  --ui-hero-to: #f5f5f7;
 
-  --landing-glass-strong: rgba(255, 255, 255, 0.72);
-  --landing-glass: rgba(255, 255, 255, 0.6);
-  --landing-glass-subtle: rgba(255, 255, 255, 0.5);
-  --landing-glass-hover: rgba(255, 255, 255, 0.85);
-  --landing-surface-border: rgba(0, 0, 0, 0.08);
+  --ui-glass-strong: rgba(255, 255, 255, 0.72);
+  --ui-glass: rgba(255, 255, 255, 0.6);
+  --ui-glass-subtle: rgba(255, 255, 255, 0.5);
+  --ui-glass-hover: rgba(255, 255, 255, 0.85);
+  --ui-surface-border: rgba(0, 0, 0, 0.08);
 
-  --landing-chip-bg: rgba(0, 0, 0, 0.03);
-  --landing-chip-border: rgba(0, 0, 0, 0.06);
+  --ui-chip-bg: rgba(0, 0, 0, 0.03);
+  --ui-chip-border: rgba(0, 0, 0, 0.06);
 
-  --landing-accent-tint: rgba(124, 58, 237, 0.08);
-  --landing-accent-border: rgba(124, 58, 237, 0.2);
-  --landing-accent-border-soft: rgba(124, 58, 237, 0.15);
-  --landing-accent-border-strong: rgba(124, 58, 237, 0.25);
+  --ui-accent-tint: rgba(124, 58, 237, 0.08);
+  --ui-accent-border: rgba(124, 58, 237, 0.2);
+  --ui-accent-border-soft: rgba(124, 58, 237, 0.15);
+  --ui-accent-border-strong: rgba(124, 58, 237, 0.25);
 
-  --landing-particle: rgba(124, 58, 237, 0.25);
-  --landing-grid: rgba(124, 58, 237, 0.35);
+  --ui-particle: rgba(124, 58, 237, 0.25);
+  --ui-grid: rgba(124, 58, 237, 0.35);
 
-  --landing-shadow-hover: rgba(0, 0, 0, 0.12);
+  --ui-shadow-hover: rgba(0, 0, 0, 0.12);
 
-  --landing-error: #ef4444;
-  --landing-error-bg: rgba(239, 68, 68, 0.08);
-  --landing-error-border: rgba(239, 68, 68, 0.2);
+  --ui-error: #ef4444;
+  --ui-error-bg: rgba(239, 68, 68, 0.08);
+  --ui-error-border: rgba(239, 68, 68, 0.2);
+
+  /* --- /graph 与 /im 的紧凑外壳 token（亮态）。暗值见下方 dark 块，
+         每个表面都有成对亮/暗值，文字一律用 --ink / --ink-2 / --ink-3。 --- */
+  --ui-surface: #ffffff;                    /* 面板 / 卡片实底 */
+  --ui-surface-2: #f4f4f5;                  /* 次级实底、hover */
+  --ui-surface-3: #e9e9ec;                  /* 激活态实底、分隔块 */
+  --ui-shell: rgba(255, 255, 255, 0.88);    /* 侧栏（半透明） */
+  --ui-shell-2: #f4f4f5;                    /* 侧栏实底（canvas 视图） */
+  --ui-topbar: rgba(255, 255, 255, 0.92);   /* 顶栏（半透明，chat 视图） */
+  --ui-topbar-2: rgba(255, 255, 255, 0.88); /* 顶栏（canvas 视图） */
+  --ui-glass-soft: rgba(255, 255, 255, 0.65); /* 玻璃卡 0.7 档（hover） */
+  --ui-glass-deep: rgba(255, 255, 255, 0.9);  /* 玻璃卡 0.9 档 */
+  --ui-line: rgba(0, 0, 0, 0.05);           /* 细边 0.05 */
+  --ui-border-2: #e4e4e7;                   /* 实边（原 #27272a） */
+  --ui-border-3: #d4d4d8;                   /* 强实边（原 #3f3f46） */
+  --ui-border-4: #cfcfd4;                   /* 分隔条 hover（原 #3a3a3a） */
+  --ui-fill: rgba(0, 0, 0, 0.04);           /* 中性按钮底 */
+  --ui-fill-2: rgba(0, 0, 0, 0.05);
+  --ui-fill-hover: rgba(0, 0, 0, 0.08);
+  --ui-overlay: rgba(0, 0, 0, 0.4);         /* 弹窗遮罩 */
+  --ui-label-bg: rgba(255, 255, 255, 0.85); /* 节点名称气泡底 */
+  --ui-muted: #6b7280;                      /* 次级灰字（原 #86868b） */
+  --ui-text-tertiary: #6b7280;              /* 三级文字（暗态沿用 --ink-3 的值） */
+  --ui-muted-2: #6b7280;                    /* 更深的次级灰字（原 #6b6b6b） */
+  --ui-accent-solid: #7c3aed;               /* 实底强调按钮 */
+  --ui-accent-solid-hover: #6d28d9;
+  --ui-accent-hover: #6d28d9;                /* 画布内紫色按钮 hover */
+  --ui-accent-tint-2: rgba(124, 58, 237, 0.1);
+  --ui-accent-tint-3: rgba(124, 58, 237, 0.15);
+  --ui-accent-tint-4: rgba(124, 58, 237, 0.08);    /* 激活导航底 */
+  --ui-accent-tint-5: rgba(124, 58, 237, 0.1);     /* 空态徽标底 */
+  --ui-grid-soft: rgba(124, 58, 237, 0.25);        /* 面板网格线 */
+  --ui-accent-line: rgba(124, 58, 237, 0.25);      /* 装饰连线 */
+  --ui-accent-line-soft: rgba(124, 58, 237, 0.2);  /* 装饰连线（更淡） */
+  --ui-accent-shadow: rgba(124, 58, 237, 0.3);
+  --ui-accent-shadow-hover: rgba(124, 58, 237, 0.4);
+  --ui-on-accent: #ffffff;                  /* 强调实底上的文字 */
+  --ui-green: #059669;
+  --ui-green-tint: rgba(16, 185, 129, 0.1);
+  --ui-green-tint-2: rgba(16, 185, 129, 0.15);
+  --ui-amber: #b45309;
+  --ui-amber-tint: rgba(245, 158, 11, 0.1);
+  --ui-amber-border: rgba(245, 158, 11, 0.2);
+  --ui-amber-strong: #b45309;            /* 上下文用量条（高） */
+  --ui-green-strong: #059669;             /* 上下文用量条（正常） */
+  --ui-danger-strong: #dc2626;              /* 危险按钮 hover */
+  --ui-danger-deep: #fca5a5;                /* 停止按钮描边 */
+  --ui-danger-bg: #fef2f2;                  /* 停止按钮底 */
+  --ui-danger-bg-active: #fee2e2;
+  --ui-danger-text: #b91c1c;
+
+  /* --- 刻意保留深色的画布美术（像素画布 / 粒子网格）。亮暗一致，
+         放在 token 里集中管理；画布内文字必须用 --ui-canvas-ink* 才能
+         在其深色底上可读（见契约 D3）。 --- */
+  --ui-canvas: #050505;
+  --ui-canvas-deep: #09090b;
+  --ui-canvas-surface: #121215;
+  --ui-canvas-surface-2: #18181b;
+  --ui-canvas-panel: rgba(26, 26, 26, 0.7);
+  --ui-canvas-node: rgba(5, 5, 5, 0.9);
+  --ui-canvas-node-2: rgba(0, 0, 0, 0.6);
+  --ui-canvas-fill: rgba(255, 255, 255, 0.04);
+  --ui-canvas-line: rgba(255, 255, 255, 0.08);
+  --ui-canvas-grid: rgba(39, 39, 42, 0.35);
+  --ui-canvas-divider: rgba(39, 39, 42, 0.6);
+  --ui-canvas-ink: #f5f5f7;
+  --ui-canvas-ink-2: #a1a1aa;
+  --ui-canvas-ink-alt: #e4e4e7;
+  --ui-canvas-border: #27272a;
+  --ui-canvas-viewport-border: rgba(167, 139, 250, 0.5);
+  --ui-canvas-viewport-fill: rgba(167, 139, 250, 0.1);
+  --ui-canvas-accent: #a78bfa;
+  --ui-canvas-green: #34d399;
+  --ui-canvas-danger: #ef4444;
+  --ui-canvas-doc: #a1a1aa;
+  --ui-canvas-glow: rgba(167, 139, 250, 0.2);
+  --ui-canvas-hover-fill: rgba(167, 139, 250, 0.15);
+  --ui-canvas-hover-border: rgba(167, 139, 250, 0.3);
+  --ui-canvas-edge: rgba(148, 163, 184, 0.35);
+  --ui-canvas-glow-sky: rgba(56, 189, 248, 0.12);
+  --ui-canvas-glow-green: rgba(34, 197, 94, 0.12);
+  --ui-canvas-beam-create-ink: #bfdbfe;
+  --ui-canvas-beam-create-border: rgba(59, 130, 246, 0.5);
+  --ui-canvas-beam-create-bg: rgba(30, 58, 138, 0.6);
+  --ui-canvas-beam-border: rgba(82, 82, 91, 0.5);
+  --ui-canvas-beam-bg: rgba(9, 9, 11, 0.7);
+  --ui-canvas-danger-bg: #450a0a;
+  --ui-canvas-danger-text: #fecaca;
+
+  /* --- 像素风浅色控件（WorkspaceSwitcher），亮暗一致以保持原样 --- */
+  --ui-pixel-surface: #eeeeed;
+  --ui-pixel-surface-hover: #e8e8e7;
+  --ui-pixel-menu: #f9f9f8;
+  --ui-pixel-active: #f59e0b;
+  --ui-pixel-outline-30: rgba(134, 116, 97, 0.3);
+  --ui-pixel-outline-20: rgba(134, 116, 97, 0.2);
 
   color-scheme: light;
 }
 
 [data-theme="dark"],
 .dark {
-  --landing-bg: #0d0d0d;
-  --landing-text: #f5f5f7;
-  --landing-text-secondary: #86868b;
-  --landing-text-muted: #6b6b6b;
-  --landing-border: #2a2a2a;
-  --landing-accent: #a78bfa;
-  --landing-accent-green: #34d399;
+  --ui-bg: #0d0d0d;
+  --ui-text: #f5f5f7;
+  --ui-text-secondary: #86868b;
+  --ui-text-muted: #6b6b6b;
+  --ui-border: #2a2a2a;
+  --ui-accent: #a78bfa;
+  --ui-accent-green: #34d399;
 
-  --landing-hero-from: #0d0d0d;
-  --landing-hero-mid: #1a0b2e;
-  --landing-hero-to: #0d0d0d;
+  --ui-hero-from: #0d0d0d;
+  --ui-hero-mid: #1a0b2e;
+  --ui-hero-to: #0d0d0d;
 
-  --landing-glass-strong: rgba(26, 26, 26, 0.6);
-  --landing-glass: rgba(26, 26, 26, 0.5);
-  --landing-glass-subtle: rgba(26, 26, 26, 0.4);
-  --landing-glass-hover: rgba(26, 26, 26, 0.8);
-  --landing-surface-border: rgba(255, 255, 255, 0.08);
+  --ui-glass-strong: rgba(26, 26, 26, 0.6);
+  --ui-glass: rgba(26, 26, 26, 0.5);
+  --ui-glass-subtle: rgba(26, 26, 26, 0.4);
+  --ui-glass-hover: rgba(26, 26, 26, 0.8);
+  --ui-surface-border: rgba(255, 255, 255, 0.08);
 
-  --landing-chip-bg: rgba(255, 255, 255, 0.03);
-  --landing-chip-border: rgba(255, 255, 255, 0.06);
+  --ui-chip-bg: rgba(255, 255, 255, 0.03);
+  --ui-chip-border: rgba(255, 255, 255, 0.06);
 
-  --landing-accent-tint: rgba(124, 58, 237, 0.1);
-  --landing-accent-border: rgba(124, 58, 237, 0.2);
-  --landing-accent-border-soft: rgba(124, 58, 237, 0.15);
-  --landing-accent-border-strong: rgba(124, 58, 237, 0.3);
+  --ui-accent-tint: rgba(124, 58, 237, 0.1);
+  --ui-accent-border: rgba(124, 58, 237, 0.2);
+  --ui-accent-border-soft: rgba(124, 58, 237, 0.15);
+  --ui-accent-border-strong: rgba(124, 58, 237, 0.3);
 
-  --landing-particle: rgba(124, 58, 237, 0.4);
-  --landing-grid: rgba(124, 58, 237, 0.5);
+  --ui-particle: rgba(124, 58, 237, 0.4);
+  --ui-grid: rgba(124, 58, 237, 0.5);
 
-  --landing-shadow-hover: rgba(0, 0, 0, 0.3);
+  --ui-shadow-hover: rgba(0, 0, 0, 0.3);
 
-  --landing-error: #ef4444;
-  --landing-error-bg: rgba(239, 68, 68, 0.08);
-  --landing-error-border: rgba(239, 68, 68, 0.2);
+  --ui-error: #ef4444;
+  --ui-error-bg: rgba(239, 68, 68, 0.08);
+  --ui-error-border: rgba(239, 68, 68, 0.2);
+
+  /* --- /graph 与 /im 紧凑外壳 token（暗态）——值锁定为改造前的字面量，
+         零视觉回归。名字集合与上方 :root 完全对称。 --- */
+  --ui-surface: #121215;
+  --ui-surface-2: #18181b;
+  --ui-surface-3: #27272a;
+  --ui-shell: rgba(13, 13, 13, 0.95);
+  --ui-shell-2: #0c0c0f;
+  --ui-topbar: rgba(9, 9, 11, 0.85);
+  --ui-topbar-2: rgba(9, 9, 11, 0.8);
+  --ui-glass-soft: rgba(26, 26, 26, 0.7);
+  --ui-glass-deep: rgba(26, 26, 26, 0.9);
+  --ui-line: rgba(255, 255, 255, 0.05);
+  --ui-border-2: #27272a;
+  --ui-border-3: #3f3f46;
+  --ui-border-4: #3a3a3a;
+  --ui-fill: rgba(255, 255, 255, 0.04);
+  --ui-fill-2: rgba(255, 255, 255, 0.05);
+  --ui-fill-hover: rgba(255, 255, 255, 0.08);
+  --ui-overlay: rgba(0, 0, 0, 0.5);
+  --ui-label-bg: rgba(0, 0, 0, 0.6);
+  --ui-muted: #86868b;
+  --ui-text-tertiary: #6E6E73;
+  --ui-muted-2: #6b6b6b;
+  --ui-accent-solid: #7c3aed;
+  --ui-accent-solid-hover: #6d28d9;
+  --ui-accent-hover: #8b5cf6;
+  --ui-accent-tint-2: rgba(167, 139, 250, 0.1);
+  --ui-accent-tint-3: rgba(167, 139, 250, 0.15);
+  --ui-accent-tint-4: rgba(167, 139, 250, 0.08);
+  --ui-accent-tint-5: rgba(124, 58, 237, 0.08);
+  --ui-grid-soft: rgba(124, 58, 237, 0.3);
+  --ui-accent-line: rgba(167, 139, 250, 0.3);
+  --ui-accent-line-soft: rgba(167, 139, 250, 0.2);
+  --ui-accent-shadow: rgba(124, 58, 237, 0.3);
+  --ui-accent-shadow-hover: rgba(124, 58, 237, 0.4);
+  --ui-on-accent: #ffffff;
+  --ui-green: #34d399;
+  --ui-green-tint: rgba(52, 211, 153, 0.1);
+  --ui-green-tint-2: rgba(52, 211, 153, 0.15);
+  --ui-amber: #f59e0b;
+  --ui-amber-tint: rgba(245, 158, 11, 0.1);
+  --ui-amber-border: rgba(245, 158, 11, 0.15);
+  --ui-amber-strong: #facc15;
+  --ui-green-strong: #22c55e;
+  --ui-danger-strong: #dc2626;
+  --ui-danger-deep: #7f1d1d;
+  --ui-danger-bg: #1f0b0b;
+  --ui-danger-bg-active: #450a0a;
+  --ui-danger-text: #fecaca;
+
+  /* --- 刻意保留深色的画布美术（亮暗一致） --- */
+  --ui-canvas: #050505;
+  --ui-canvas-deep: #09090b;
+  --ui-canvas-surface: #121215;
+  --ui-canvas-surface-2: #18181b;
+  --ui-canvas-panel: rgba(26, 26, 26, 0.7);
+  --ui-canvas-node: rgba(5, 5, 5, 0.9);
+  --ui-canvas-node-2: rgba(0, 0, 0, 0.6);
+  --ui-canvas-fill: rgba(255, 255, 255, 0.04);
+  --ui-canvas-line: rgba(255, 255, 255, 0.08);
+  --ui-canvas-grid: rgba(39, 39, 42, 0.35);
+  --ui-canvas-divider: rgba(39, 39, 42, 0.6);
+  --ui-canvas-ink: #f5f5f7;
+  --ui-canvas-ink-2: #a1a1aa;
+  --ui-canvas-ink-alt: #e4e4e7;
+  --ui-canvas-border: #27272a;
+  --ui-canvas-viewport-border: rgba(167, 139, 250, 0.5);
+  --ui-canvas-viewport-fill: rgba(167, 139, 250, 0.1);
+  --ui-canvas-accent: #a78bfa;
+  --ui-canvas-green: #34d399;
+  --ui-canvas-danger: #ef4444;
+  --ui-canvas-doc: #a1a1aa;
+  --ui-canvas-glow: rgba(167, 139, 250, 0.2);
+  --ui-canvas-hover-fill: rgba(167, 139, 250, 0.15);
+  --ui-canvas-hover-border: rgba(167, 139, 250, 0.3);
+  --ui-canvas-edge: rgba(148, 163, 184, 0.35);
+  --ui-canvas-glow-sky: rgba(56, 189, 248, 0.12);
+  --ui-canvas-glow-green: rgba(34, 197, 94, 0.12);
+  --ui-canvas-beam-create-ink: #bfdbfe;
+  --ui-canvas-beam-create-border: rgba(59, 130, 246, 0.5);
+  --ui-canvas-beam-create-bg: rgba(30, 58, 138, 0.6);
+  --ui-canvas-beam-border: rgba(82, 82, 91, 0.5);
+  --ui-canvas-beam-bg: rgba(9, 9, 11, 0.7);
+  --ui-canvas-danger-bg: #450a0a;
+  --ui-canvas-danger-text: #fecaca;
+
+  /* --- 像素风浅色控件（亮暗一致） --- */
+  --ui-pixel-surface: #eeeeed;
+  --ui-pixel-surface-hover: #e8e8e7;
+  --ui-pixel-menu: #f9f9f8;
+  --ui-pixel-active: #f59e0b;
+  --ui-pixel-outline-30: rgba(134, 116, 97, 0.3);
+  --ui-pixel-outline-20: rgba(134, 116, 97, 0.2);
 
   color-scheme: dark;
 }

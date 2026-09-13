@@ -29,10 +29,10 @@ export function PixelHeader({
         alignItems: "center",
         justifyContent: "space-between",
         padding: "0 20px",
-        background: "rgba(9, 9, 11, 0.85)",
+        background: "var(--ui-topbar)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+        borderBottom: "1px solid var(--ui-chip-border)",
         flexShrink: 0,
       }}
     >
@@ -55,14 +55,14 @@ export function PixelHeader({
             width: 28,
             height: 28,
             borderRadius: 8,
-            background: "rgba(167, 139, 250, 0.15)",
+            background: "var(--ui-accent-tint-3)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            border: "1px solid rgba(167, 139, 250, 0.2)",
+            border: "1px solid var(--ui-accent-line-soft)",
           }}
           >
-            <Hexagon size={20} color="#a78bfa" />
+            <Hexagon size={20} color="var(--ui-accent)" />
           </div>
           <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 14 }}>
             Swarm IDE
@@ -79,8 +79,8 @@ export function PixelHeader({
                 borderRadius: 8,
                 fontSize: 13,
                 fontWeight: 500,
-                color: i === 0 ? "#a78bfa" : "#86868b",
-                background: i === 0 ? "rgba(167, 139, 250, 0.08)" : "transparent",
+                color: i === 0 ? "var(--ui-accent)" : "var(--ui-muted)",
+                background: i === 0 ? "var(--ui-accent-tint-4)" : "transparent",
                 border: "none",
                 cursor: "pointer",
                 transition: "all 0.2s",
@@ -90,13 +90,13 @@ export function PixelHeader({
               }}
               onMouseEnter={(e) => {
                 if (i !== 0) {
-                  e.currentTarget.style.color = "#f5f5f7";
-                  e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                  e.currentTarget.style.color = "var(--ink)";
+                  e.currentTarget.style.background = "var(--ui-fill)";
                 }
               }}
               onMouseLeave={(e) => {
                 if (i !== 0) {
-                  e.currentTarget.style.color = "#86868b";
+                  e.currentTarget.style.color = "var(--ui-muted)";
                   e.currentTarget.style.background = "transparent";
                 }
               }}
@@ -118,20 +118,20 @@ export function PixelHeader({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.06)",
-            color: "var(--ink-3)",
+            background: "var(--ui-fill)",
+            border: "1px solid var(--ui-chip-border)",
+            color: "var(--ui-text-tertiary)",
             cursor: "pointer",
             transition: "all 0.2s",
           }}
           title={isDark ? t.switchToLight : t.switchToDark}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-            e.currentTarget.style.color = "#f5f5f7";
+            e.currentTarget.style.background = "var(--ui-fill-hover)";
+            e.currentTarget.style.color = "var(--ink)";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-            e.currentTarget.style.color = "#86868b";
+            e.currentTarget.style.background = "var(--ui-fill)";
+            e.currentTarget.style.color = "var(--ui-muted)";
           }}
         >
           {isDark ? <Sun size={20} /> : <Moon size={20} />}
@@ -146,20 +146,20 @@ export function PixelHeader({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.06)",
-            color: "var(--ink-3)",
+            background: "var(--ui-fill)",
+            border: "1px solid var(--ui-chip-border)",
+            color: "var(--ui-text-tertiary)",
             cursor: "pointer",
             transition: "all 0.2s",
           }}
           title={t.settings}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-            e.currentTarget.style.color = "#f5f5f7";
+            e.currentTarget.style.background = "var(--ui-fill-hover)";
+            e.currentTarget.style.color = "var(--ink)";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-            e.currentTarget.style.color = "#86868b";
+            e.currentTarget.style.background = "var(--ui-fill)";
+            e.currentTarget.style.color = "var(--ui-muted)";
           }}
         >
           <Settings size={20} />

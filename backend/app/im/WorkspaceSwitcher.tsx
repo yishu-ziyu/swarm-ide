@@ -27,7 +27,7 @@ export function WorkspaceSwitcher({
   return (
     <div className="relative">
       <button
-        className="bg-[#eeeeed] px-3 py-1 flex items-center gap-2 border-2 border-[#867461]/30 cursor-pointer hover:bg-[#e8e8e7] step-transition"
+        className="bg-[var(--ui-pixel-surface)] px-3 py-1 flex items-center gap-2 border-2 border-[var(--ui-pixel-outline-30)] cursor-pointer hover:bg-[var(--ui-pixel-surface-hover)] step-transition"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="font-mono text-xs text-ink font-bold">
@@ -48,15 +48,15 @@ export function WorkspaceSwitcher({
           />
           
           {/* Menu */}
-          <div className="absolute top-full left-0 mt-1 w-48 bg-[#eeeeed] pixel-border-double z-50">
+          <div className="absolute top-full left-0 mt-1 w-48 bg-[var(--ui-pixel-surface)] pixel-border-double z-50">
             {workspaces.map((ws) => (
               <button
                 key={ws.id}
                 className={`
                   w-full px-3 py-2 flex items-center gap-2 text-left
                   ${ws.name === currentWorkspace 
-                    ? "bg-[#f59e0b] text-white" 
-                    : "hover:bg-[#f9f9f8]"
+                    ? "bg-[var(--ui-pixel-active)] text-[color:var(--ui-on-accent)]" 
+                    : "hover:bg-[var(--ui-pixel-menu)]"
                   }
                 `}
                 onClick={() => {
@@ -74,11 +74,11 @@ export function WorkspaceSwitcher({
             ))}
             
             {/* Divider */}
-            <div className="border-t border-[#867461]/20" />
+            <div className="border-t border-[var(--ui-pixel-outline-20)]" />
             
             {/* Create New */}
             <button
-              className="w-full px-3 py-2 flex items-center gap-2 text-ink-2 hover:bg-[#f9f9f8]"
+              className="w-full px-3 py-2 flex items-center gap-2 text-ink-2 hover:bg-[var(--ui-pixel-menu)]"
               onClick={() => {
                 onCreateWorkspace?.();
                 setIsOpen(false);
