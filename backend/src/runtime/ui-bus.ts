@@ -97,6 +97,10 @@ export class WorkspaceUIBus {
   private readonly channels = new Map<string, ChannelState>();
   constructor(private readonly maxBuffer = DEFAULT_MAX_BUFFER) {}
 
+  disposeChannel(workspaceId: string): void {
+    this.channels.delete(workspaceId);
+  }
+
   private getChannel(workspaceId: string): ChannelState {
     const existing = this.channels.get(workspaceId);
     if (existing) return existing;

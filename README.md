@@ -1,4 +1,4 @@
-# Swarm-IDE: 自组织的Agent蜂群
+# Swarm-IDE: 让 AI 协作像聊天一样简单
 
 [English README](./README_EN.md)
 
@@ -10,8 +10,7 @@
 
 [![Demo](assets/image.jpg)](https://www.bilibili.com/video/BV1X163BQE5c/?share_source=copy_web&vd_source=e0705640ea2f51669a392fb07684e286)
 
-## 🎬 视频【开源版 Kimi-K2.5 蜂群多 Agent】
-- Demo：
+## 视频演示
 <video src="https://github.com/user-attachments/assets/4ebd88c6-bbdb-4714-87a5-54d1fed08db8" width="100%" controls></video>
 - 详情视频： https://www.bilibili.com/video/BV1X163BQE5c/?share_source=copy_web&vd_source=e0705640ea2f51669a392fb07684e286
 
@@ -21,14 +20,43 @@
 ## 知乎文章
 https://zhuanlan.zhihu.com/p/2000736341479138182
 
-## 优势
-- 任意动态创建 sub-agent
-- 可以向任意 agent 发送消息
-- 微信式聊天界面，随时介入任何子代理
-- 流式 graph 动态展现协作状态
+---
 
-## 对比
-~~值得注意的是，本项目在 Kimi-Swarm 和 Claude Team **之前**就已经**独立**提出蜂群模式。尤其是 Claude Team，仔细对比会发现它的主要思想(动态派遣、人与任意 Agent 通信)和本项目的设计**不谋而合**，某程度说明作者的眼光和设计已达到先进水平，在静态 LangGraph 框架大行其道的当时能独立做出来这样的设计，相当超前了。笔者当时就把项目白皮书放到区块链了，如果担心笔者在吹牛，可亲自去看[区块链链时间戳](https://viewblock.io/arweave/tx/BJ5GVAQBUXtv21jIEvuyqTsv9t93j7rlG47Lwcmtdu8).~~
+## 一句话价值主张
+
+**Swarm-IDE 是一个自组织的 AI 协作平台，让多个 AI Agent 像微信群聊一样协同工作。**
+
+你只需下达指令，AI 蜂群自动分解任务、分配角色、协作完成——无需学习复杂的框架概念，像聊天一样简单。
+
+---
+
+## 核心体验
+
+### 像拉群一样创建 AI 工作组
+
+```
+你："帮我分析竞品，需要研究、技术、产品三个维度"
+AI：自动创建 3 个专业 Agent，分别负责市场研究、技术分析、产品策略
+```
+
+### 像聊天一样观察和介入
+
+- **实时 Graph**：看得到 AI 之间的协作拓扑和消息流向
+- **随时插入**：像回复群消息一样，向任意 Agent 发送指令
+- **不再黑箱**：每个 AI 的思考过程全程可见
+
+### 支持的协作模式
+
+| 模式 | 说明 |
+|------|------|
+| 主从模式 | 一个 Orchestrator 协调多个专业 Agent |
+| 群聊模式 | 多个 Agent 共同讨论，类比群聊 |
+| 层级模式 | Agent 可以创建子-Agent，形成多层树状结构 |
+| 自由模式 | 任意 Agent 之间可以直接通信 |
+
+---
+
+## 与其他产品的对比
 
 | 对比项 | Kimi-Swarm | Claude Agent Team | Swarm-IDE |
 | --- | --- | --- | --- |
@@ -40,61 +68,71 @@ https://zhuanlan.zhihu.com/p/2000736341479138182
 | 是否开源 | ❌ | ❌ | ✅ |
 | 发布时间 | 2026.1.27 | 2026.2.6 | 2026.1.2 |
 
+---
 
 ## 界面设计
+
+### IM 式对话
+- 树状多级对话列表：像微信一样选择任意 Agent 对话（即使是深层次嵌套）
+- 实时流式输出，包括 tool-call 参数
+
+### Graph 可视化
 - Graph 直接展示蜂群拓扑与实时通信链路
-- 树状多级对话列表：可以像微信一样选择任意 agent 对话（即使是深层次）
-- LLM history 面板：实时展示该 agent 的上下文，agent 不再是黑箱
-- 实时流式输出 tool-call 参数
+- 节点代表 Agent，连线代表消息流向
+- 点击任意节点可直接向该 Agent 发消息
 
-## 哲学
-- 极简原语：系统只依赖少量通信原语即可表达多 Agent 行为（核心是 create + send，复杂协作由此组合而来）。
-- 液态拓扑：拓扑不预设、在运行中自演化；遇到复杂任务时由 Agent 主动“雇佣”下属。
-- 扁平协作：人类可以像聊天一样介入任意层级，使复杂拓扑可观察、可调试、可介入。
+### LLM History 面板
+- 实时展示该 Agent 的上下文，Agent 不再是黑箱
+- 方便调试和理解 AI 思维过程
 
-## 概念
-没有 nodes 和 edges 的复杂抽象，只需把系统理解为“很多个人”：
+---
 
-每个人都能生孩子、也能和任意一个人说话。
+## 工作原理
 
-只要有这两种能力，就能实现任意结构
+Swarm-IDE 的设计哲学是**极简原语生成一切**：
 
-## 运行方式
-提供两种方式：
+> **只需要两个动作：创建（create）和发送（send）。任何复杂的 AI 协作模式都由这两个动作组合而来。**
+
+- **液态拓扑**：拓扑不预设、在运行中自演化
+- **扁平协作**：人类可以介入任意层级
+- **递归生成**：Agent 可以创建子-Agent，子-Agent 继续创建，形成自然扩展
+
+---
+
+## 快速开始
 
 ### 方式一：一键打开 Codespaces
-
-本系统要运行在 Linux 上，如果你没有 Linux 系统的话或者装环境遇到问题的话，可以尝试使用 GitHub 提供的免费虚拟机。点击链接创建虚拟机后，就可以执行后面的指令了
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&repo=chmod777john/swarm-ide)
 
 ### 方式二：本地运行
-```
-cd swarm-ide
-cd backend
 
+```bash
+cd swarm-ide/backend
+
+# 复制环境配置
 cp .env.example .env.local
-# 在 .env.local 填写你的 KEY 和模型
+# 在 .env.local 填写你的 API KEY
 
+# 启动服务
 docker compose up -d
 curl -X POST http://127.0.0.1:3017/api/admin/init-db
+
 bun install
 bun dev
 ```
 
 访问 http://localhost:3017
 
-点击 init-db ，然后创建 workspace 即可开始对话。
+**开始对话：**
+> "创建 3 个 Agent，给他们分别分配任务，让他们各自创建子-Agent 协同完成"
 
-直接跟他说"创建 3 个儿子，给他们分别发消息，让他们再次自己创建 3 个孙子"
+---
 
-### MCP 配置
-后端会自动加载 MCP 配置文件，支持以下位置（按优先级）：  
-1) `MCP_CONFIG_PATH` 指定的文件  
-2) 项目根目录：`mcp.json` / `.mcp.json`  
-3) `backend/`：`backend/mcp.json` / `backend/.mcp.json`
+## MCP 配置
 
-最小示例（stdio/http/sse 任选其一）：  
+后端支持 MCP (Model Context Protocol)，可扩展 Agent 能力：
+
 ```json
 {
   "mcpServers": {
@@ -109,19 +147,36 @@ bun dev
 }
 ```
 
-字段说明（常用）：`type`、`command`/`args`、`url`/`httpUrl`/`sseUrl`、`headers`、`env`、`disabled`、`timeoutMs`。
+自动扫描路径（按优先级）：
+1. `MCP_CONFIG_PATH` 指定文件
+2. 项目根目录：`mcp.json` / `.mcp.json`
+3. `backend/`：`backend/mcp.json` / `backend/.mcp.json`
 
-### Skill 支持
-后端会自动扫描技能目录并注入到新 agent 的系统提示中：
-- 默认扫描路径：`skills/` 或 `backend/skills/`
-- 可通过 `AGENT_SKILLS_DIR` 指定自定义路径
-- 在 `SKILL.md` 的 frontmatter 里设置 `auto-load: true` 可让该技能**自动注入**到新 agent
+---
 
-技能使用方式：
-- 对应技能会出现在 “Available Skills” 列表
-- 需要时调用 `get_skill` 获取完整内容
+## Skill 系统
 
-## 环境变量说明
-后端读取 `backend/.env.local`，你需要填写：
-- `OPENROUTER_API_KEY` / `OPENROUTER_MODEL`（我使用的是 **OpenRouter Kimi 2.5**）
-- 其它连接项请参考 `backend/.env.example`
+Swarm-IDE 内置 Skill 系统，为 Agent 提供结构化专业知识：
+
+- **自动加载**：标记 `auto-load: true` 的 Skill 会自动注入到新 Agent
+- **按需调用**：Agent 可随时通过 `get_skill` 获取专业指导
+- **开箱即用**：包含 topology（拓扑协作）、代码审查、产品策略等 Skill
+
+---
+
+## 环境变量
+
+| 变量 | 必需 | 说明 |
+|------|------|------|
+| `OPENROUTER_API_KEY` | 是 | OpenRouter API Key |
+| `OPENROUTER_MODEL` | 否 | 模型名称，默认为 Kimi 2.5 |
+
+其他配置请参考 `backend/.env.example`
+
+---
+
+## 文档
+
+- [产品愿景](./docs/vision.md) - 5-10 年产品路线图
+- [IM 界面规格](./docs/specs/im-spec.md) - 详细的界面设计文档
+- [Skill 系统规格](./docs/specs/skill-system-spec.md) - 如何编写和加载 Skills

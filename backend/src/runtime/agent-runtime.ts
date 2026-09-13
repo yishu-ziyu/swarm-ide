@@ -1,5 +1,4 @@
 import { store } from "@/lib/storage";
-import { GLMStreamAssembler, parseSSEJsonLines } from "@/lib/glm-stream";
 import { OpenAIStreamAssembler } from "@/lib/openai-stream";
 
 import { AgentEventBus } from "./event-bus";
@@ -11,6 +10,45 @@ import { formatSkillPrompt, getSkillLoader } from "./skill-loader";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import path from "node:path";
+import { getConfig } from "@/lib/config";
+
+async function* parseSSEJsonLines(body: ReadableStream<Uint8Array>): AsyncGenerator<Record<string, unknown>> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  const MAX_BUFFER_SIZE = 10 * 1024 * 1024; // 10MB limit
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      if (buffer.length > MAX_BUFFER_SIZE) {
+        throw new Error("SSE buffer exceeded 10MB limit");
+      }
+
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const data = line.slice(6).trim();
+          if (data === "[DONE]") {
+            return;
+          }
+          try {
+            yield JSON.parse(data);
+          } catch {
+            // Skip invalid JSON lines
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
 
 type UUID = string;
 
@@ -254,34 +292,40 @@ const AGENT_TOOLS = [
 
 const BUILTIN_TOOL_NAMES = new Set(AGENT_TOOLS.map((tool) => tool.function.name));
 
+// 工具缓存，避免每次请求重新加载MCP
+let cachedTools: Array<{ type: string; function: Record<string, unknown> }> | null = null;
+let toolsCacheTime = 0;
+const TOOLS_CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
+
 async function getAgentTools() {
+  const now = Date.now();
+  if (cachedTools && now - toolsCacheTime < TOOLS_CACHE_TTL) {
+    return cachedTools;
+  }
+
   const loadTimeoutMs =
     Number(process.env.MCP_LOAD_TIMEOUT_MS) > 0 ? Number(process.env.MCP_LOAD_TIMEOUT_MS) : 2000;
   const mcp = await getMcpRegistry(BUILTIN_TOOL_NAMES, { loadTimeoutMs });
   const mcpTools = mcp.getToolDefinitions();
-  return [...AGENT_TOOLS, ...mcpTools];
+  cachedTools = [...AGENT_TOOLS, ...mcpTools];
+  toolsCacheTime = now;
+  return cachedTools;
 }
 
-function getGlmConfig() {
-  const apiKey = process.env.GLM_API_KEY ?? process.env.ZHIPUAI_API_KEY ?? "";
-  const baseUrl =
-    process.env.GLM_BASE_URL ??
-    "https://open.bigmodel.cn/api/paas/v4/chat/completions";
-  const model = process.env.GLM_MODEL ?? "glm-4.7";
-
-  if (!apiKey) {
-    throw new Error("Missing GLM API key (set GLM_API_KEY or ZHIPUAI_API_KEY)");
-  }
-
-  return { apiKey, baseUrl, model };
+// 主动刷新工具缓存（当MCP配置变更时调用）
+export function invalidateToolsCache() {
+  cachedTools = null;
+  toolsCacheTime = 0;
 }
 
-type LlmProvider = "glm" | "openrouter";
+type LlmProvider = "openrouter" | "ark" | "minimax";
 
 function getLlmProvider(): LlmProvider {
-  const raw = (process.env.LLM_PROVIDER ?? "glm").toLowerCase();
+  const config = getConfig();
+  const raw = (config.llmProvider ?? process.env.LLM_PROVIDER ?? "minimax").toLowerCase();
   if (raw === "openrouter" || raw === "open-router" || raw === "or") return "openrouter";
-  return "glm";
+  if (raw === "minimax") return "minimax";
+  return "ark";
 }
 
 function normalizeOpenRouterUrl(value: string) {
@@ -293,11 +337,12 @@ function normalizeOpenRouterUrl(value: string) {
 }
 
 function getOpenRouterConfig() {
-  const apiKey = process.env.OPENROUTER_API_KEY ?? "";
+  const config = getConfig();
+  const apiKey = config.openRouterApiKey ?? process.env.OPENROUTER_API_KEY ?? "";
   const baseUrl = normalizeOpenRouterUrl(
-    process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1/chat/completions"
+    config.openRouterBaseUrl ?? process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1/chat/completions"
   );
-  const model = process.env.OPENROUTER_MODEL ?? "";
+  const model = config.openRouterModel ?? process.env.OPENROUTER_MODEL ?? "";
   const httpReferer = process.env.OPENROUTER_HTTP_REFERER ?? "";
   const appTitle = process.env.OPENROUTER_APP_TITLE ?? "";
 
@@ -308,10 +353,24 @@ function getOpenRouterConfig() {
   return { apiKey, baseUrl, model, httpReferer, appTitle };
 }
 
+function getArkConfig() {
+  const config = getConfig();
+  const apiKey = config.arkApiKey ?? process.env.ARK_API_KEY ?? "";
+  const baseUrl = config.arkBaseUrl ?? process.env.ARK_BASE_URL ?? "https://ark.cn-beijing.volces.com/api/coding/v3";
+  const model = config.arkModel ?? process.env.ARK_MODEL ?? "kimi-k2.5";
+
+  if (!apiKey) {
+    throw new Error("Missing ARK API key (set ARK_API_KEY)");
+  }
+
+  return { apiKey, baseUrl, model };
+}
+
 class AgentRunner {
   private wake = createDeferred<void>();
   private started = false;
   private running = false;
+  private stopped = false;
   private interruptRequested = false;
 
   constructor(
@@ -326,6 +385,11 @@ class AgentRunner {
     this.started = true;
     void this.ensureSkillsLoaded();
     void this.loop();
+  }
+
+  stop(): void {
+    this.stopped = true;
+    this.requestInterrupt();
   }
 
   private async ensureSkillsLoaded() {
@@ -370,7 +434,9 @@ class AgentRunner {
   private async loop() {
     // eslint-disable-next-line no-constant-condition
     while (true) {
+      if (this.stopped) return;
       await this.wake.promise;
+      if (this.stopped) return;
       if (this.running) continue;
       this.running = true;
       try {
@@ -396,6 +462,10 @@ class AgentRunner {
     const role = await store.getAgentRole({ agentId: this.agentId }).catch(() => null);
     if (role === "human" || role === null) return;
     if (this.consumeInterruptRequest()) return;
+
+    // 轮询间隔配置，默认200ms，避免过度占用CPU
+    const POLL_INTERVAL_MS = Number(process.env.AGENT_POLL_INTERVAL_MS) || 200;
+
     // eslint-disable-next-line no-constant-condition
     while (true) {
       if (this.consumeInterruptRequest()) return;
@@ -418,6 +488,9 @@ class AgentRunner {
         await this.processGroupUnread(batch.groupId, batch.messages);
         if (this.consumeInterruptRequest()) return;
       }
+
+      // 处理完一批后等待，避免过度占用CPU
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
     }
   }
 
@@ -993,10 +1066,9 @@ class AgentRunner {
     ctx: { workspaceId: UUID; groupId: UUID; round: number }
   ) {
     const provider = getLlmProvider();
-    if (provider === "openrouter") {
-      return this.callOpenRouterStreaming(history, ctx);
-    }
-    return this.callGlmStreaming(history, ctx);
+    if (provider === "ark") return this.callArkStreaming(history, ctx);
+    if (provider === "minimax") return this.callMiniMaxStreaming(history, ctx);
+    return this.callOpenRouterStreaming(history, ctx);
   }
 
   private async callOpenRouterStreaming(
@@ -1159,11 +1231,11 @@ class AgentRunner {
     };
   }
 
-  private async callGlmStreaming(
+  private async callArkStreaming(
     history: HistoryMessage[],
     ctx: { workspaceId: UUID; groupId: UUID; round: number }
   ) {
-    const { apiKey, baseUrl, model } = getGlmConfig();
+    const { apiKey, baseUrl, model } = getArkConfig();
 
     getWorkspaceUIBus().emit(ctx.workspaceId, {
       event: "ui.agent.llm.start",
@@ -1180,32 +1252,38 @@ class AgentRunner {
       kind: "start",
     });
 
-    const glmPayload: Record<string, unknown> = {
+    const tools = await getAgentTools();
+    const payload: Record<string, unknown> = {
       model,
-      messages: history,
-      tools: await getAgentTools(),
-      tool_choice: "auto",
+      messages: mapOpenRouterMessages(history),
       stream: true,
-      tool_stream: true,
+      stream_options: { include_usage: true },
     };
-    const requestBody = JSON.stringify(glmPayload);
+    if (tools.length > 0) {
+      payload.tools = tools;
+      payload.tool_choice = "auto";
+    }
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    };
+
+    const requestBody = JSON.stringify(payload);
     void appendAgentLlmRequestRaw({ agentId: this.agentId, body: requestBody });
 
     const upstream = await fetch(baseUrl, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: requestBody,
     });
 
     if (!upstream.ok || !upstream.body) {
       const text = await upstream.text().catch(() => "");
-      throw new Error(`GLM upstream error: ${upstream.status} ${text}`);
+      throw new Error(`Ark upstream error: ${upstream.status} ${text}`);
     }
 
-    const assembler = new GLMStreamAssembler();
+    const assembler = new OpenAIStreamAssembler();
     let prev = assembler.snapshot();
     let assistantText = "";
     let assistantThinking = "";
@@ -1291,7 +1369,6 @@ class AgentRunner {
 
     const finalState = assembler.snapshot();
 
-    // Save token usage (current context window size)
     if (finalState.usage && finalState.usage.totalTokens > 0) {
       try {
         await store.setGroupContextTokens({
@@ -1300,6 +1377,141 @@ class AgentRunner {
         });
       } catch {
         // Best effort - don't fail if token tracking fails
+      }
+    }
+
+    return {
+      assistantText,
+      assistantThinking,
+      toolCalls: (finalState.toolCalls ?? []) as ToolCall[],
+      finishReason: finalState.finishReason,
+    };
+  }
+
+  private async callMiniMaxStreaming(
+    history: HistoryMessage[],
+    ctx: { workspaceId: UUID; groupId: UUID; round: number }
+  ) {
+    const { apiKey, baseUrl, model } = (() => {
+      const config = getConfig();
+      const apiKey = config.minimaxApiKey ?? process.env.MINIMAX_API_KEY ?? "";
+      const baseUrl =
+        config.minimaxBaseUrl ??
+        process.env.MINIMAX_BASE_URL ??
+        process.env.OPENAI_API_BASE ??
+        "https://api.minimaxi.com/v1/text/chatcompletion_v2";
+      const model =
+        config.minimaxModel ?? process.env.MINIMAX_MODEL ?? process.env.LLM_MODEL ?? "MiniMax-M2.1";
+      if (!apiKey) throw new Error("Missing MINIMAX_API_KEY");
+      return { apiKey, baseUrl, model };
+    })();
+
+    getWorkspaceUIBus().emit(ctx.workspaceId, {
+      event: "ui.agent.llm.start",
+      data: {
+        workspaceId: ctx.workspaceId,
+        agentId: this.agentId,
+        groupId: ctx.groupId,
+        round: ctx.round,
+      },
+    });
+    void appendAgentStreamEvent({ agentId: this.agentId, round: ctx.round, kind: "start" });
+
+    const tools = await getAgentTools();
+    const payload: Record<string, unknown> = {
+      model,
+      messages: mapOpenRouterMessages(history),
+      stream: true,
+      stream_options: { include_usage: true },
+    };
+    if (tools.length > 0) {
+      payload.tools = tools;
+      payload.tool_choice = "auto";
+    }
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    };
+
+    const requestBody = JSON.stringify(payload);
+    void appendAgentLlmRequestRaw({ agentId: this.agentId, body: requestBody });
+
+    const upstream = await fetch(baseUrl, {
+      method: "POST",
+      headers,
+      body: requestBody,
+    });
+
+    if (!upstream.ok || !upstream.body) {
+      const text = await upstream.text().catch(() => "");
+      throw new Error(`MiniMax upstream error: ${upstream.status} ${text}`);
+    }
+
+    const assembler = new OpenAIStreamAssembler();
+    let prev = assembler.snapshot();
+    let assistantText = "";
+    let assistantThinking = "";
+
+    for await (const evt of parseSSEJsonLines(upstream.body)) {
+      const state = assembler.push(evt as any);
+      const reasoningDelta = state.reasoningContent.slice(prev.reasoningContent.length);
+      const contentDelta = state.content.slice(prev.content.length);
+      const toolCallDeltas = extractToolCallDeltas(evt as any, prev, state);
+
+      if (reasoningDelta) {
+        assistantThinking += reasoningDelta;
+        this.bus.emit(this.agentId, { event: "agent.stream", data: { kind: "reasoning", delta: reasoningDelta } });
+        void appendAgentStreamEvent({ agentId: this.agentId, round: ctx.round, kind: "reasoning", delta: reasoningDelta });
+      }
+
+      if (contentDelta) {
+        assistantText += contentDelta;
+        this.bus.emit(this.agentId, { event: "agent.stream", data: { kind: "content", delta: contentDelta } });
+        void appendAgentStreamEvent({ agentId: this.agentId, round: ctx.round, kind: "content", delta: contentDelta });
+      }
+
+      for (const delta of toolCallDeltas) {
+        this.bus.emit(this.agentId, {
+          event: "agent.stream",
+          data: { kind: "tool_calls", delta: delta.delta, tool_call_id: delta.tool_call_id, tool_call_name: delta.tool_call_name },
+        });
+        void appendAgentStreamEvent({
+          agentId: this.agentId,
+          round: ctx.round,
+          kind: "tool_calls",
+          delta: delta.delta,
+          tool_call_id: delta.tool_call_id,
+          tool_call_name: delta.tool_call_name,
+        });
+      }
+
+      prev = state;
+    }
+
+    this.bus.emit(this.agentId, {
+      event: "agent.done",
+      data: { finishReason: prev.finishReason ?? undefined },
+    });
+    void appendAgentStreamEvent({ agentId: this.agentId, round: ctx.round, kind: "done", finishReason: prev.finishReason ?? null });
+    getWorkspaceUIBus().emit(ctx.workspaceId, {
+      event: "ui.agent.llm.done",
+      data: {
+        workspaceId: ctx.workspaceId,
+        agentId: this.agentId,
+        groupId: ctx.groupId,
+        round: ctx.round,
+        finishReason: prev.finishReason ?? undefined,
+      },
+    });
+
+    const finalState = assembler.snapshot();
+
+    if (finalState.usage && finalState.usage.totalTokens > 0) {
+      try {
+        await store.setGroupContextTokens({ groupId: ctx.groupId, tokens: finalState.usage.totalTokens });
+      } catch {
+        // Best effort
       }
     }
 
@@ -1360,6 +1572,15 @@ export class AgentRuntime {
   public readonly bus = new AgentEventBus();
   private bootstrapped = false;
   static readonly VERSION = 2;
+
+  disposeRunner(agentId: UUID): void {
+    const runner = this.runners.get(agentId);
+    if (runner) {
+      runner.stop?.();
+      this.runners.delete(agentId);
+      this.bus.disposeChannel(agentId);
+    }
+  }
 
   async bootstrap() {
     if (this.bootstrapped) return;

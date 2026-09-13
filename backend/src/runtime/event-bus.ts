@@ -56,6 +56,14 @@ export class AgentEventBus {
   private readonly channels = new Map<string, ChannelState>();
   constructor(private readonly maxBuffer = DEFAULT_MAX_BUFFER) {}
 
+  /**
+   * Remove a channel and clean up its resources.
+   * Call this when an agent is deleted to prevent memory leaks.
+   */
+  disposeChannel(agentId: string): void {
+    this.channels.delete(agentId);
+  }
+
   private getChannel(agentId: string): ChannelState {
     const existing = this.channels.get(agentId);
     if (existing) return existing;

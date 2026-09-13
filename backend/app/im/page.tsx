@@ -11,6 +11,20 @@ import { mermaid } from "@streamdown/mermaid";
 import { IMShell } from "./IMShell";
 import { IMMessageList } from "./IMMessageList";
 import { IMHistoryList } from "./IMHistoryList";
+// import { AgentGraphPanel } from "./AgentGraphPanel";
+import { PixelAgentGraph } from "./PixelAgentGraph";
+import { PixelHeader } from "./PixelHeader";
+import { PixelNavSidebar } from "./PixelNavSidebar";
+import { PixelAgentCard } from "./PixelAgentCard";
+import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
+
+// V2 Components - New UI Design
+import { PixelNavSidebarV2 } from "./PixelNavSidebarV2";
+import { PixelHeaderV2 } from "./PixelHeaderV2";
+import { IMMessageListV2 } from "./IMMessageListV2";
+import { CanvasView, type CanvasNode, type CanvasConnection } from "./CanvasView";
+import { useLanguage } from "../_components/LanguageContext";
+import LanguageSwitcher from "../_components/LanguageSwitcher";
 
 // Create code plugin with dark theme
 const code = createCodePlugin({
@@ -57,6 +71,19 @@ type Message = {
   content: string;
   contentType: string;
   sendTime: string;
+};
+
+type AppSettings = {
+  llmProvider?: "ark" | "openrouter" | "minimax";
+  arkApiKey?: string;
+  arkBaseUrl?: string;
+  arkModel?: string;
+  openRouterApiKey?: string;
+  openRouterBaseUrl?: string;
+  openRouterModel?: string;
+  minimaxApiKey?: string;
+  minimaxBaseUrl?: string;
+  minimaxModel?: string;
 };
 
 type UiStreamEvent = {
@@ -184,13 +211,14 @@ function cx(...classes: Array<string | false | undefined | null>) {
 
 export default function IMPage() {
   return (
-    <Suspense fallback={<div style={{ padding: 24 }}>Loading...</div>}>
+    <Suspense fallback={<div style={{ padding: 24 }}>加载中...</div>}>
       <IMPageInner />
     </Suspense>
   );
 }
 
 function IMPageInner() {
+  const { t, theme, toggleTheme } = useLanguage();
   const searchParams = useSearchParams();
   const workspaceOverrideId = searchParams.get("workspaceId");
   const [session, setSession] = useState<WorkspaceDefaults | null>(() => null);
@@ -209,6 +237,8 @@ function IMPageInner() {
   const [toolStream, setToolStream] = useState("");
   const [llmHistory, setLlmHistory] = useState("");
   const [agentError, setAgentError] = useState<string | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
   const [vizEvents, setVizEvents] = useState<VizEvent[]>([]);
   const [vizBeams, setVizBeams] = useState<VizBeam[]>([]);
   const [vizSize, setVizSize] = useState({ width: 640, height: 260 });
@@ -219,15 +249,32 @@ function IMPageInner() {
   const [vizDebug, setVizDebug] = useState<VizDebugEntry[]>([]);
   const [vizEventsCollapsed, setVizEventsCollapsed] = useState(false);
   const [rightPanels, setRightPanels] = useState<RightPanelState[]>([
-    { id: "history", title: "LLM history", size: 320, collapsed: false },
-    { id: "content", title: "Realtime content", size: 220, collapsed: false },
-    { id: "reasoning", title: "Realtime reasoning", size: 220, collapsed: false },
-    { id: "tools", title: "Realtime tools", size: 200, collapsed: false },
+    { id: "history", title: "", size: 320, collapsed: false },
+    { id: "content", title: "", size: 220, collapsed: false },
+    { id: "reasoning", title: "", size: 220, collapsed: false },
+    { id: "tools", title: "", size: 200, collapsed: false },
   ]);
+
+  // Initialize panel titles with translations
+  useEffect(() => {
+    setRightPanels([
+      { id: "history", title: t.llmHistory, size: 320, collapsed: false },
+      { id: "content", title: t.realtimeContent, size: 220, collapsed: false },
+      { id: "reasoning", title: t.realtimeReasoning, size: 220, collapsed: false },
+      { id: "tools", title: t.realtimeTools, size: 200, collapsed: false },
+    ]);
+  }, [t]);
   const [midSplitRatio, setMidSplitRatio] = useState(0.55);
   const [midStackHeight, setMidStackHeight] = useState(0);
   const [nodeOffsets, setNodeOffsets] = useState<Record<string, { x: number; y: number }>>({});
   const [collapsedAgents, setCollapsedAgents] = useState<Record<string, boolean>>({});
+  const [activeNav, setActiveNav] = useState("fleet");
+  const [focusMode, setFocusMode] = useState<"none" | "left" | "mid" | "right">("none");
+  const [leftPanelWidth, setLeftPanelWidth] = useState(240);
+  const [rightPanelWidth, setRightPanelWidth] = useState(320);
+
+  // View mode state for UI switching
+  const [viewMode, setViewMode] = useState<"chat" | "canvas">("chat");
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const esRef = useRef<EventSource | null>(null);
@@ -418,20 +465,20 @@ function IMPageInner() {
 
   const getGroupLabel = useCallback(
     (g: Group | null | undefined) => {
-      if (!g) return "Group";
+      if (!g) return t.group;
       if (g.name) return g.name;
-      if (g.id === session?.defaultGroupId) return "P2P 人类↔助手";
+      if (g.id === session?.defaultGroupId) return t.p2pHumanAssistant;
 
       const memberRoles = g.memberIds
         .filter((id) => id !== session?.humanAgentId)
         .map((id) => agentRoleById.get(id) ?? id.slice(0, 8));
 
-      if (memberRoles.length === 1) return `P2P 人类↔${memberRoles[0]}`;
+      if (memberRoles.length === 1) return `P2P ↔ ${memberRoles[0]}`;
       if (memberRoles.length === 2) return `${memberRoles[0]} ↔ ${memberRoles[1]}`;
-      if (memberRoles.length > 2) return `Group (${memberRoles.length})`;
-      return "Group";
+      if (memberRoles.length > 2) return `${t.group} (${memberRoles.length})`;
+      return t.group;
     },
-    [agentRoleById, session?.defaultGroupId, session?.humanAgentId]
+    [agentRoleById, session?.defaultGroupId, session?.humanAgentId, t]
   );
 
   const groupByAgentId = useMemo(() => {
@@ -658,12 +705,27 @@ function IMPageInner() {
     return created;
   }, [refreshAgents]);
 
-  // Load token limit config on mount
   useEffect(() => {
     api<{ tokenLimit: number }>("/api/config")
-      .then((c) => setTokenLimit(c.tokenLimit))
+      .then((c) => {
+        setTokenLimit(c.tokenLimit);
+        setAppSettings(c as AppSettings);
+      })
       .catch(() => setTokenLimit(100000));
   }, []);
+
+  const handleSaveSettings = async (updates: AppSettings) => {
+    try {
+      const saved = await api<AppSettings>("/api/config", {
+        method: "POST",
+        body: JSON.stringify(updates),
+      });
+      setAppSettings(saved);
+      setIsSettingsOpen(false);
+    } catch (e) {
+      alert(t.failedToSaveSettings + ": " + (e instanceof Error ? e.message : String(e)));
+    }
+  };
 
   const refreshGroups = useCallback(async (s: WorkspaceDefaults, opts?: { silent?: boolean }) => {
     if (!opts?.silent) setStatus("groups");
@@ -788,6 +850,7 @@ function IMPageInner() {
       esRef.current = es;
 
       es.onmessage = (evt) => {
+        console.log("[IM-AGENT-STREAM] SSE event:", evt.data);
         try {
           const payload = JSON.parse(evt.data) as AgentStreamEvent;
           if (payload.event === "agent.stream") {
@@ -834,6 +897,7 @@ function IMPageInner() {
             return;
           }
           if (payload.event === "agent.done") {
+            console.log("[IM-AGENT-STREAM] agent.done received");
             toolCallBuffersRef.current = new Map();
             toolResultBuffersRef.current = new Map();
             const groupId = activeGroupIdRef.current;
@@ -859,7 +923,7 @@ function IMPageInner() {
 
   const hireSubAgent = useCallback(async () => {
     if (!session) return;
-    const role = (window.prompt("Sub-agent role", "assistant") ?? "").trim();
+    const role = (window.prompt(t.subAgentRole, "assistant") ?? "").trim();
     if (!role) return;
 
     setError(null);
@@ -920,9 +984,17 @@ function IMPageInner() {
   }, [agents, session, stoppingAgents]);
 
   const onSend = useCallback(async () => {
-    if (!session || !activeGroupId) return;
+    if (!session || !activeGroupId) {
+      console.log("[IM] onSend early return: session=", !!session, "activeGroupId=", activeGroupId);
+      return;
+    }
     const text = draft.trim();
-    if (!text) return;
+    if (!text) {
+      console.log("[IM] onSend early return: empty text");
+      return;
+    }
+
+    console.log("[IM] onSend called", { text, activeGroupId, humanAgentId: session.humanAgentId });
 
     if (text.startsWith("/create") || text.startsWith("/hire")) {
       const role = text.replace(/^\/(create|hire)\s*/i, "").trim();
@@ -972,14 +1044,19 @@ function IMPageInner() {
     queueMicrotask(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }));
 
     try {
+      console.log("[IM] Calling POST /api/groups/" + activeGroupId + "/messages");
       await api(`/api/groups/${activeGroupId}/messages`, {
         method: "POST",
         body: JSON.stringify({ senderId: session.humanAgentId, content: text, contentType: "text" }),
       });
+      console.log("[IM] POST succeeded");
+    } catch (e) {
+      console.error("[IM] POST failed:", e);
     } finally {
       // keep going
     }
 
+    console.log("[IM] Setting status to idle");
     setStatus("idle");
     void refreshMessages(session, activeGroupId, { markRead: false });
     void refreshGroups(session);
@@ -1073,6 +1150,7 @@ function IMPageInner() {
     uiEsRef.current = es;
 
     es.onmessage = (evt) => {
+      console.log("[IM-UI] SSE event:", evt.data);
       let payload: UiStreamEvent | null = null;
       try {
         payload = JSON.parse(evt.data) as UiStreamEvent;
@@ -1093,6 +1171,7 @@ function IMPageInner() {
             setAgentStatusById((prev) => ({ ...prev, [agentId]: "IDLE" }));
           }
         } else if (payload.event === "ui.message.created") {
+          console.log("[IM-UI] ui.message.created received", payload.data);
           const senderId = payload.data?.message?.senderId as UUID | undefined;
           const groupId = payload.data?.groupId as UUID | undefined;
           const senderRole = senderId
@@ -1341,6 +1420,18 @@ function IMPageInner() {
     [startMidResize]
   );
 
+  // Handler for when a node is clicked in the graph panel
+  const handleGraphNodeClick = useCallback(
+    (agentId: UUID) => {
+      // Find a group that contains this agent
+      const groupWithAgent = groups.find((g) => g.memberIds.includes(agentId));
+      if (groupWithAgent) {
+        setActiveGroupId(groupWithAgent.id);
+      }
+    },
+    [groups]
+  );
+
   const handleRightPanelResizeStart = useCallback(
     (index: number, event: ReactPointerEvent<HTMLDivElement>) => {
       event.preventDefault();
@@ -1550,18 +1641,25 @@ function IMPageInner() {
               </span>
             ) : null}
             {tree?.hasChildren ? (
-              <button
-                type="button"
+              <span
+                role="button"
+                tabIndex={0}
                 className="tree-caret"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   toggleAgentCollapsed(tree.agentId);
                 }}
-                title={tree.collapsed ? "展开" : "收起"}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleAgentCollapsed(tree.agentId);
+                  }
+                }}
+                title={tree.collapsed ? t.expand : t.collapse}
               >
                 {tree.collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-              </button>
+              </span>
             ) : tree ? (
               <span className="tree-caret-placeholder" />
             ) : null}
@@ -1615,55 +1713,59 @@ function IMPageInner() {
   return (
     <IMShell
       left={
-        <aside className="panel panel-left">
-        <div className="header">
-          <div>
-            <div style={{ fontWeight: 700 }}>Workspace</div>
-            <div className="muted mono" style={{ fontSize: 12 }}>
-              {session?.workspaceId ?? "-"}
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 8 }} />
-        </div>
-
-        <div style={{ padding: 12 }}>
-          <div className="muted mono" style={{ fontSize: 12, lineHeight: 1.4 }}>
-            human: {session?.humanAgentId ?? "-"}
-            <br />
-            assistant: {session?.assistantAgentId ?? "-"}
-          </div>
-        </div>
-
-        <div className="list">
-          {agentTreeRows.length === 0 && extraGroups.length === 0 ? (
-            <div style={{ padding: 16 }} className="muted">
-              No groups yet.
-            </div>
-          ) : (
-            <>
-              {agentTreeRows.map(({ agent, group, depth, hasChildren, collapsed, guides, isLast }) =>
-                group
-                  ? renderGroupRow(group, {
-                      depth,
-                      hasChildren,
-                      collapsed,
-                      agentId: agent.id,
-                      guides,
-                      isLast,
-                    })
-                  : null
-              )}
-              {extraGroups.map((g) => renderGroupRow(g))}
-            </>
-          )}
-        </div>
-        </aside>
+        viewMode === "canvas" ? (
+          <PixelNavSidebarV2 view="canvas" />
+        ) : (
+          <PixelNavSidebar
+            activeNav={activeNav}
+            onNavChange={setActiveNav}
+            onDeployAgent={() => {
+              setIsSettingsOpen(true);
+            }}
+          />
+        )
       }
       mid={
         <main className="panel panel-mid">
+        {viewMode === "canvas" ? (
+          <PixelHeaderV2
+            view="canvas"
+            onViewChange={setViewMode}
+            onSettings={() => setIsSettingsOpen(true)}
+          />
+        ) : (
+          <PixelHeader
+            title={t.workspaces}
+            isDark={theme === 'dark'}
+            onThemeToggle={toggleTheme}
+            onSettingsClick={() => setIsSettingsOpen(true)}
+          />
+        )}
+        {viewMode !== "canvas" && (
+          <WorkspaceSwitcher 
+          currentWorkspace="SWARM_001"
+          workspaces={[
+            { id: "1", name: "SWARM_001" },
+            { id: "2", name: "PROJECT_B" },
+          ]}
+          onWorkspaceChange={(id) => console.log("Switch to:", id)}
+          onCreateWorkspace={() => console.log("Create workspace")}
+        />
+        )}
         <div className="header">
           <div style={{ fontWeight: 700 }}>{title}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              className="btn"
+              style={{ padding: "4px 8px" }}
+              title={t.error}
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <svg className="w-4 h-4" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
             <button
               className="btn"
               style={{
@@ -1675,9 +1777,9 @@ function IMPageInner() {
               }}
               onClick={() => void onInterruptAllAgents()}
               disabled={!session || stoppingAgents}
-              title="停止所有 agent 当前循环"
+              title={t.stoppingAgents}
             >
-              {stoppingAgents ? "Stopping..." : "Stop All Agents"}
+              {stoppingAgents ? t.resetting : t.stopAllAgents}
             </button>
             <div className="muted" style={{ fontSize: 12 }}>
               {status !== "idle" ? `${status}...` : ""}
@@ -1685,6 +1787,27 @@ function IMPageInner() {
           </div>
         </div>
 
+        {viewMode === "canvas" ? (
+          // Canvas View - Full screen canvas with agents
+          <CanvasView
+            nodes={agents.map((a): CanvasNode => ({
+              id: a.id,
+              type: a.role === "human" ? "master" : "live",
+              title: a.role,
+              description: agentStatusById[a.id] || "idle",
+              x: 200 + Math.random() * 400,
+              y: 150 + Math.random() * 300,
+            }))}
+            connections={vizBeams.map((b): CanvasConnection => ({
+              id: b.id,
+              from: b.fromId,
+              to: b.toId,
+              color: b.kind === "create" ? "#34d399" : "#a78bfa",
+            }))}
+            onNodeClick={(id) => console.log("Node clicked:", id)}
+          />
+        ) : (
+        <>
         <div className="mid-stack" ref={midStackRef} style={{
           gridTemplateRows: midStackHeight > 0
             ? `${Math.max(0, Math.round(midChatHeight))}px ${MID_SPLITTER_SIZE}px minmax(${MID_GRAPH_MIN_HEIGHT}px, 1fr)`
@@ -1749,20 +1872,48 @@ function IMPageInner() {
                   left: 12,
                   top: 12,
                   display: "flex",
-                  gap: 8,
+                  gap: 6,
                   alignItems: "center",
-                  padding: "6px 10px",
-                  borderRadius: 999,
-                  border: "1px solid #27272a",
-                  background: "rgba(9,9,11,0.7)",
+                  padding: "6px 12px",
+                  borderRadius: 12,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(26, 26, 26, 0.7)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
                   fontSize: 12,
-                  color: "#e4e4e7",
+                  color: "#a1a1aa",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
                 }}
               >
-                <span className="mono">缩放 {Math.round(vizScale * 100)}%</span>
+                <span style={{ color: "#f5f5f7", fontWeight: 600, minWidth: 56 }}>
+                  {Math.round(vizScale * 100)}%
+                </span>
+                <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)", margin: "0 4px" }} />
                 <button
-                  className="btn"
-                  style={{ padding: "2px 8px", fontSize: 12 }}
+                  style={{
+                    padding: "4px 10px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    borderRadius: 8,
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "rgba(255,255,255,0.04)",
+                    color: "#e4e4e7",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    lineHeight: 1,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(167, 139, 250, 0.15)";
+                    e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.3)";
+                    e.currentTarget.style.color = "#a78bfa";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                    e.currentTarget.style.color = "#e4e4e7";
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
                     setVizScale((s) => Math.min(s + 0.1, 2));
@@ -1771,18 +1922,60 @@ function IMPageInner() {
                   +
                 </button>
                 <button
-                  className="btn"
-                  style={{ padding: "2px 8px", fontSize: 12 }}
+                  style={{
+                    padding: "4px 10px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    borderRadius: 8,
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "rgba(255,255,255,0.04)",
+                    color: "#e4e4e7",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    lineHeight: 1,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(167, 139, 250, 0.15)";
+                    e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.3)";
+                    e.currentTarget.style.color = "#a78bfa";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                    e.currentTarget.style.color = "#e4e4e7";
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
                     setVizScale((s) => Math.max(s - 0.1, 0.5));
                   }}
                 >
-                  -
+                  −
                 </button>
                 <button
-                  className="btn"
-                  style={{ padding: "2px 8px", fontSize: 12 }}
+                  style={{
+                    padding: "4px 10px",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    borderRadius: 8,
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "rgba(255,255,255,0.04)",
+                    color: "#e4e4e7",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    lineHeight: 1,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(167, 139, 250, 0.15)";
+                    e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.3)";
+                    e.currentTarget.style.color = "#a78bfa";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                    e.currentTarget.style.color = "#e4e4e7";
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
                     setVizScale(0.9);
@@ -1791,7 +1984,8 @@ function IMPageInner() {
                 >
                   Reset
                 </button>
-                <span className="muted mono">Ctrl/⌘ + 滚轮缩放</span>
+                <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)", margin: "0 4px" }} />
+                <span style={{ fontSize: 11, color: "#6b6b6b" }}>⌘ 滚轮缩放</span>
               </div>
 
               <div
@@ -2081,7 +2275,7 @@ function IMPageInner() {
             className="input textarea"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Type a message… (Ctrl/Cmd+Enter to send)"
+            placeholder={t.messagePlaceholder}
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
@@ -2090,101 +2284,105 @@ function IMPageInner() {
             }}
           />
           <button className="btn btn-primary" onClick={() => void onSend()} disabled={!draft.trim() || status === "send"}>
-            Send
+            {t.send}
           </button>
         </div>
-        </main>
+        </>
+        )}
+      </main>
       }
       right={
         <>
-          <section className="panel panel-right">
-        <div className="header">
-          <div style={{ fontWeight: 700 }}>Agent Details</div>
-        </div>
-
-        <div className="agent-sidebar-body">
-          <div className="muted" style={{ fontSize: 12 }}>
-            Streaming from: <span className="mono">{streamAgentId ?? "-"}</span>
-          </div>
-          {agentError ? (
-            <div
-              className="toast"
-              style={{ borderColor: "#713f12", background: "rgba(113,63,18,0.25)", color: "#fde68a" }}
-            >
-              {agentError}
-            </div>
-          ) : null}
-
-          <div className="agent-panels">
-            {rightPanels.map((panel, idx) => (
-              <Fragment key={panel.id}>
-                <div
-                  className={cx("agent-panel", panel.collapsed && "collapsed")}
-                  style={
-                    panel.collapsed
-                      ? { flex: `0 0 ${RIGHT_PANEL_HEADER_HEIGHT}px`, height: RIGHT_PANEL_HEADER_HEIGHT }
-                      : { flex: `1 1 ${panel.size}px`, minHeight: RIGHT_PANEL_MIN_HEIGHT }
-                  }
-                >
-                  <button
-                    className="agent-panel-header"
-                    type="button"
-                    onClick={() => toggleRightPanel(panel.id)}
+          <PixelAgentGraph
+            agents={agents.map(a => ({
+              id: a.id,
+              name: a.role,
+              role: a.role,
+              status: agentStatusById[a.id] === "BUSY" ? "running" : 
+                     agentStatusById[a.id] === "WAKING" ? "thinking" : 
+                     a.role === "human" ? "idle" : "offline",
+              parentId: a.parentId ?? undefined,
+            }))}
+            onAgentClick={(id) => console.log("Agent clicked:", id)}
+          />
+          {isSettingsOpen && (
+            <div className="modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
+              <div className="card" style={{ width: 460, maxWidth: "100%", background: "#18181b", padding: 24, borderRadius: 8 }}>
+                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 16 }}>{t.llmProviderSettings}</div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#a1a1aa" }}>Provider</label>
+                  <select
+                    className="input"
+                    value={appSettings?.llmProvider || "minimax"}
+                    onChange={(e) => setAppSettings({ ...appSettings, llmProvider: e.target.value as AppSettings["llmProvider"] })}
+                    style={{ width: "100%", padding: "8px 12px", background: "#27272a", color: "#e4e4e7", border: "1px solid #3f3f46", borderRadius: 6 }}
                   >
-                    <span className="agent-panel-caret">{panel.collapsed ? "▸" : "▾"}</span>
-                    <span>{panel.title}</span>
-                  </button>
-                  {!panel.collapsed ? (
-                    <div className={cx("agent-panel-body", "mono")}>
-                      {panel.id === "history" ? (
-                        Array.isArray(llmHistoryParsed) ? (
-                          <IMHistoryList
-                            entries={llmHistoryParsed}
-                            historyRole={historyRole}
-                            historyAccent={historyAccent}
-                            summarizeHistoryEntry={summarizeHistoryEntry}
-                          />
-                        ) : (
-                          <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>
-                            {llmHistoryFormatted || "—"}
-                          </pre>
-                        )
-                      ) : panel.id === "content" ? (
-                        <MarkdownContent content={contentStream} />
-                      ) : panel.id === "reasoning" ? (
-                        <MarkdownContent content={reasoningStream} />
-                      ) : (
-                        <MarkdownContent content={toolStream} />
-                      )}
-                    </div>
-                  ) : null}
+                    <option value="minimax">MiniMax</option>
+                    <option value="ark">Ark (Volcengine)</option>
+                    <option value="openrouter">OpenRouter</option>
+                  </select>
                 </div>
-                {idx < rightPanels.length - 1 ? (
-                  <div
-                    className={cx(
-                      "agent-panel-resizer",
-                      (panel.collapsed || rightPanels[idx + 1]?.collapsed) && "disabled"
-                    )}
-                    onPointerDown={(e) => handleRightPanelResizeStart(idx, e)}
-                  />
-                ) : null}
-              </Fragment>
-            ))}
-          </div>
-        </div>
-          </section>
+                {(appSettings?.llmProvider === "ark" || (!appSettings?.llmProvider && true)) && (
+                  <>
+                    <div style={{ marginBottom: 12 }}>
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#a1a1aa" }}>{t.apiKey}</label>
+                      <input className="input" type="password" placeholder="Ark API Key" value={appSettings?.arkApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, arkApiKey: e.target.value })} />
+                    </div>
+                    <div style={{ marginBottom: 12 }}>
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#a1a1aa" }}>{t.model}</label>
+                      <input className="input" placeholder="kimi-k2.5" value={appSettings?.arkModel || ""} onChange={(e) => setAppSettings({ ...appSettings, arkModel: e.target.value })} />
+                    </div>
+                  </>
+                )}
+                {appSettings?.llmProvider === "openrouter" && (
+                  <>
+                    <div style={{ marginBottom: 12 }}>
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#a1a1aa" }}>API Key</label>
+                      <input className="input" type="password" placeholder="OpenRouter API Key" value={appSettings?.openRouterApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, openRouterApiKey: e.target.value })} />
+                    </div>
+                    <div style={{ marginBottom: 12 }}>
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#a1a1aa" }}>Model</label>
+                      <input className="input" placeholder="openai/gpt-4o" value={appSettings?.openRouterModel || ""} onChange={(e) => setAppSettings({ ...appSettings, openRouterModel: e.target.value })} />
+                    </div>
+                  </>
+                )}
+                {appSettings?.llmProvider === "minimax" && (
+                  <>
+                    <div style={{ marginBottom: 12 }}>
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#a1a1aa" }}>API Key</label>
+                      <input className="input" type="password" placeholder="MiniMax API Key" value={appSettings?.minimaxApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, minimaxApiKey: e.target.value })} />
+                    </div>
+                    <div style={{ marginBottom: 12 }}>
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#a1a1aa" }}>Model</label>
+                      <input className="input" placeholder="MiniMax-M2.1" value={appSettings?.minimaxModel || ""} onChange={(e) => setAppSettings({ ...appSettings, minimaxModel: e.target.value })} />
+                    </div>
+                  </>
+                )}
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 24 }}>
+                  <button className="btn" onClick={() => setIsSettingsOpen(false)}>{t.cancel}</button>
+                  <button className="btn btn-primary" onClick={() => handleSaveSettings(appSettings!)}>{t.saveChanges}</button>
+                </div>
+              </div>
+            </div>
+          )}
           <style jsx global>{`
-        @keyframes viz-dash {
-          from {
-            stroke-dashoffset: 18;
-          }
-          to {
-            stroke-dashoffset: 0;
-          }
-        }
-      `}</style>
+            @keyframes viz-dash {
+              from {
+                stroke-dashoffset: 18;
+              }
+              to {
+                stroke-dashoffset: 0;
+              }
+            }
+          `}</style>
         </>
       }
+      focusMode={focusMode}
+      onFocusModeChange={setFocusMode}
+      leftWidth={leftPanelWidth}
+      rightWidth={rightPanelWidth}
+      onLeftWidthChange={setLeftPanelWidth}
+      onRightWidthChange={setRightPanelWidth}
     />
   );
 }

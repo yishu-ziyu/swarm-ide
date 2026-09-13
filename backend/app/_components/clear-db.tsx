@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "./LanguageContext";
 
 const SESSION_KEY = "agent-wechat.session.v1";
 
 export default function ClearDbButton() {
+  const { t } = useLanguage();
   const [busy, setBusy] = useState<"reset" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -12,10 +14,8 @@ export default function ClearDbButton() {
     if (busy) return;
     setError(null);
 
-    const ok = window.confirm(
-      "This will DELETE all data in Postgres and Redis, then re-init schema. Continue?"
-    );
-    if (!ok) return;
+    const confirmed = window.confirm(t.resetConfirmMessage);
+    if (!confirmed) return;
 
     setBusy("reset");
     try {
@@ -28,20 +28,28 @@ export default function ClearDbButton() {
       window.location.href = "/";
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-    } finally {
       setBusy(null);
     }
   }
 
   return (
     <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-      <button className="btn" onClick={() => void onReset()} disabled={busy !== null}>
-        {busy === "reset" ? "Resetting..." : "Reset DB + Redis"}
+      <button
+        className="btn"
+        onClick={() => void onReset()}
+        disabled={busy !== null}
+        style={{
+          background: "rgba(239, 68, 68, 0.1)",
+          borderColor: "var(--error-color)",
+          color: "var(--error-color)",
+        }}
+      >
+        {busy === "reset" ? t.resetting : t.resetDbAndRedis}
       </button>
       {error ? (
-        <span className="muted" style={{ color: "#fecaca", fontSize: 13 }}>
+        <div className="toast" style={{ width: "100%", marginTop: 8 }}>
           {error}
-        </span>
+        </div>
       ) : null}
     </div>
   );

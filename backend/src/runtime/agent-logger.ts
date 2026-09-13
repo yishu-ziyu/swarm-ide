@@ -201,7 +201,7 @@ async function appendKindDelta(input: {
   tool_call_id?: string;
   tool_call_name?: string;
 }) {
-  const filename = path.join(logDir, `agent-${input.agentId}.${input.kind}.log`);
+  const filename = path.join(input.logDir, `agent-${input.agentId}.${input.kind}.log`);
   let text = input.delta;
 
   if (input.kind === "tool_calls" || input.kind === "tool_result") {
@@ -273,12 +273,13 @@ async function flushOrderedStream(input: {
     }
   }
 
-  orderedBuffers.set(input.agentId, {
-    startedAt: buffer.startedAt,
-    round: buffer.round,
-    writtenKinds: new Set(),
-    events: [],
-  });
+  orderedBuffers.delete(input.agentId);
 
   await enqueueStreamWrite(input.agentId, () => fs.appendFile(orderedFile, text, "utf-8"));
+}
+
+export function disposeAgentLogger(agentId: string): void {
+  streamQueues.delete(agentId);
+  requestQueues.delete(agentId);
+  orderedBuffers.delete(agentId);
 }

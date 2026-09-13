@@ -53,7 +53,7 @@ Everyone can spawn children and talk to anyone.
 
 With only these two capabilities, any structure can be built.
 
-## How to Run
+## How to Run (Native support on macOS & Linux)
 ```
 cd agent-wechat
 cd backend

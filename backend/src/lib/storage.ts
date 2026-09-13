@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, inArray, ne, sql as dsql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, lt, ne, sql as dsql } from "drizzle-orm";
 
 import { getDb } from "@/db";
 import { agents, groupMembers, groups, messages, workspaces } from "@/db/schema";
@@ -687,8 +687,9 @@ export const store = {
     return rows[0]?.id ?? null;
   },
 
-  async listMessages(input: { groupId: UUID }) {
+  async listMessages(input: { groupId: UUID; limit?: number; beforeTime?: Date }) {
     const db = getDb();
+    const limit = Math.max(1, Math.min(1000, input.limit ?? 200));
     const rows = await db
       .select({
         id: messages.id,
@@ -698,8 +699,13 @@ export const store = {
         sendTime: messages.sendTime,
       })
       .from(messages)
-      .where(eq(messages.groupId, input.groupId))
-      .orderBy(messages.sendTime);
+      .where(
+        input.beforeTime
+          ? and(eq(messages.groupId, input.groupId), lt(messages.sendTime, input.beforeTime))
+          : eq(messages.groupId, input.groupId)
+      )
+      .orderBy(desc(messages.sendTime))
+      .limit(limit);
 
     return rows.map((m) => ({ ...m, sendTime: m.sendTime.toISOString() }));
   },

@@ -1,3 +1,7 @@
 {
-  "tokenLimit": 256000
+  "tokenLimit": 256000,
+  "llmProvider": "minimax",
+  "minimaxApiKey": "YOUR_API_KEY_HERE",
+  "minimaxBaseUrl": "https://api.minimaxi.com/v1/text/chatcompletion_v2",
+  "minimaxModel": "MiniMax-M2.1"
 }
