@@ -46,10 +46,10 @@ export default function CreateWorkspace() {
           flex: 1,
           minWidth: 200,
           padding: "12px 16px",
-          borderRadius: 12,
+          borderRadius: 16,
           background: "rgba(255,255,255,0.04)",
           border: "1px solid rgba(255,255,255,0.08)",
-          color: "#f5f5f7",
+          color: "var(--ink)",
           fontSize: 14,
           outline: "none",
           transition: "all 0.2s",
@@ -79,7 +79,7 @@ export default function CreateWorkspace() {
         style={{
           whiteSpace: "nowrap",
           padding: "12px 20px",
-          borderRadius: 12,
+          borderRadius: 16,
           background: "#7c3aed",
           color: "white",
           border: "none",
@@ -95,7 +95,7 @@ export default function CreateWorkspace() {
         whileHover={{ scale: busy || !name.trim() ? 1 : 1.02, boxShadow: "0 4px 12px rgba(124, 58, 237, 0.4)" }}
         whileTap={{ scale: busy || !name.trim() ? 1 : 0.98 }}
       >
-        <Plus size={16} />
+        <Plus size={14} />
         {busy ? "..." : t.create}
       </motion.button>
       {error ? (
@@ -106,7 +106,7 @@ export default function CreateWorkspace() {
             width: "100%",
             marginTop: 8,
             padding: 12,
-            borderRadius: 10,
+            borderRadius: 8,
             background: "rgba(239, 68, 68, 0.08)",
             border: "1px solid rgba(239, 68, 68, 0.2)",
             color: "#ef4444",

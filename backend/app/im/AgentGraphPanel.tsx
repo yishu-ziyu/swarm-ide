@@ -222,27 +222,27 @@ export const AgentGraphPanel = memo(function AgentGraphPanel({
         <div style={{ display: "flex", gap: 4 }}>
           <button
             className="btn"
-            style={{ padding: "2px 6px", fontSize: 11 }}
+            style={{ padding: "2px 6px", fontSize: 12 }}
             onClick={() => setScale((s) => Math.min(s + 0.1, 2))}
           >
-            <Plus size={12} />
+            <Plus size={14} />
           </button>
           <button
             className="btn"
-            style={{ padding: "2px 6px", fontSize: 11 }}
+            style={{ padding: "2px 6px", fontSize: 12 }}
             onClick={() => setScale((s) => Math.max(s - 0.1, 0.5))}
           >
-            <Minus size={12} />
+            <Minus size={14} />
           </button>
           <button
             className="btn"
-            style={{ padding: "2px 6px", fontSize: 11 }}
+            style={{ padding: "2px 6px", fontSize: 12 }}
             onClick={() => {
               setScale(1);
               setOffset({ x: 0, y: 0 });
             }}
           >
-            <RotateCcw size={12} />
+            <RotateCcw size={14} />
           </button>
         </div>
       </div>
@@ -429,9 +429,9 @@ export const AgentGraphPanel = memo(function AgentGraphPanel({
                     top: NODE_SIZE + 4,
                     left: "50%",
                     transform: "translateX(-50%)",
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: 600,
-                    color: "var(--text-secondary)",
+                    color: "var(--ink-2)",
                     whiteSpace: "nowrap",
                     textAlign: "center",
                     maxWidth: 80,
@@ -452,9 +452,9 @@ export const AgentGraphPanel = memo(function AgentGraphPanel({
         style={{
           padding: "6px 12px",
           borderTop: "1px solid var(--border-color)",
-          fontSize: 11,
+          fontSize: 12,
           fontFamily: "ui-monospace, monospace",
-          color: "var(--text-muted)",
+          color: "var(--ink-2)",
           display: "flex",
           justifyContent: "space-between",
         }}

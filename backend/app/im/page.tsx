@@ -1658,7 +1658,7 @@ function IMPageInner() {
                 }}
                 title={tree.collapsed ? t.expand : t.collapse}
               >
-                {tree.collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                {tree.collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
               </span>
             ) : tree ? (
               <span className="tree-caret-placeholder" />
@@ -1686,20 +1686,20 @@ function IMPageInner() {
         ) : null}
         {g.contextTokens > 0 && (
           <div style={{ marginTop: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, marginBottom: 2 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, marginBottom: 2 }}>
               <span className="muted">Context</span>
               <span className="mono" style={{ color: (g.contextTokens / tokenLimit) > 0.8 ? "#ef4444" : (g.contextTokens / tokenLimit) > 0.5 ? "#facc15" : "#22c55e" }}>
                 {g.contextTokens.toLocaleString()}
                 <span className="muted" style={{ marginLeft: 4 }}>/ {tokenLimit.toLocaleString()}</span>
               </span>
             </div>
-            <div style={{ height: 3, background: "#27272a", borderRadius: 2, overflow: "hidden" }}>
+            <div style={{ height: 3, background: "#27272a", borderRadius: 8, overflow: "hidden" }}>
               <div
                 style={{
                   height: "100%",
                   width: `${Math.min(100, (g.contextTokens / tokenLimit) * 100)}%`,
                   background: (g.contextTokens / tokenLimit) > 0.8 ? "#ef4444" : (g.contextTokens / tokenLimit) > 0.5 ? "#facc15" : "#22c55e",
-                  borderRadius: 2,
+                  borderRadius: 8,
                   transition: "width 0.3s ease",
                 }}
               />
@@ -1761,7 +1761,7 @@ function IMPageInner() {
               title={t.error}
               onClick={() => setIsSettingsOpen(true)}
             >
-              <svg className="w-4 h-4" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -1875,18 +1875,18 @@ function IMPageInner() {
                   gap: 6,
                   alignItems: "center",
                   padding: "6px 12px",
-                  borderRadius: 12,
+                  borderRadius: 16,
                   border: "1px solid rgba(255,255,255,0.08)",
                   background: "rgba(26, 26, 26, 0.7)",
                   backdropFilter: "blur(12px)",
                   WebkitBackdropFilter: "blur(12px)",
                   fontSize: 12,
-                  color: "#a1a1aa",
+                  color: "var(--ink-2)",
                   fontFamily: "'JetBrains Mono', monospace",
                   boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
                 }}
               >
-                <span style={{ color: "#f5f5f7", fontWeight: 600, minWidth: 56 }}>
+                <span style={{ color: "var(--ink)", fontWeight: 600, minWidth: 56 }}>
                   {Math.round(vizScale * 100)}%
                 </span>
                 <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)", margin: "0 4px" }} />
@@ -1898,7 +1898,7 @@ function IMPageInner() {
                     borderRadius: 8,
                     border: "1px solid rgba(255,255,255,0.08)",
                     background: "rgba(255,255,255,0.04)",
-                    color: "#e4e4e7",
+                    color: "var(--ink)",
                     cursor: "pointer",
                     transition: "all 0.15s ease",
                     fontFamily: "'JetBrains Mono', monospace",
@@ -1929,7 +1929,7 @@ function IMPageInner() {
                     borderRadius: 8,
                     border: "1px solid rgba(255,255,255,0.08)",
                     background: "rgba(255,255,255,0.04)",
-                    color: "#e4e4e7",
+                    color: "var(--ink)",
                     cursor: "pointer",
                     transition: "all 0.15s ease",
                     fontFamily: "'JetBrains Mono', monospace",
@@ -1960,7 +1960,7 @@ function IMPageInner() {
                     borderRadius: 8,
                     border: "1px solid rgba(255,255,255,0.08)",
                     background: "rgba(255,255,255,0.04)",
-                    color: "#e4e4e7",
+                    color: "var(--ink)",
                     cursor: "pointer",
                     transition: "all 0.15s ease",
                     fontFamily: "'JetBrains Mono', monospace",
@@ -1985,7 +1985,7 @@ function IMPageInner() {
                   Reset
                 </button>
                 <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)", margin: "0 4px" }} />
-                <span style={{ fontSize: 11, color: "#6b6b6b" }}>⌘ 滚轮缩放</span>
+                <span style={{ fontSize: 12, color: "var(--ink-3)" }}>⌘ 滚轮缩放</span>
               </div>
 
               <div
@@ -2063,7 +2063,7 @@ function IMPageInner() {
                             >
                               <div
                                 style={{
-                                  fontSize: 11,
+                                  fontSize: 12,
                                   fontWeight: 700,
                                   color: beam.kind === "create" ? "#bfdbfe" : "#e4e4e7",
                                   border: `1px solid ${beam.kind === "create" ? "rgba(59,130,246,0.5)" : "rgba(82,82,91,0.5)"}`,
@@ -2154,7 +2154,7 @@ function IMPageInner() {
                             background: "rgba(0,0,0,0.6)",
                           }}
                         >
-                          <Icon size={24} color={isHuman ? "#f8fafc" : "#e4e4e7"} />
+                          <Icon size={20} color={isHuman ? "#f8fafc" : "#e4e4e7"} />
                         </div>
                         {status === "BUSY" ? (
                           <motion.div
@@ -2179,13 +2179,13 @@ function IMPageInner() {
                           transform: "translateX(-50%)",
                           textAlign: "center",
                           width: 120,
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: 700,
-                          color: "#e4e4e7",
+                          color: "var(--ink)",
                         }}
                       >
                         {agent.role}
-                        <div style={{ fontSize: 9, color: ring, marginTop: 2 }}>{status}</div>
+                        <div style={{ fontSize: 12, color: ring, marginTop: 2 }}>{status}</div>
                       </div>
                     </motion.div>
                   );
@@ -2206,7 +2206,7 @@ function IMPageInner() {
                         onClick={() => setVizEventsCollapsed(true)}
                         title="收起"
                       >
-                        <ChevronRight size={16} />
+                        <ChevronRight size={14} />
                       </button>
                     </div>
                   </div>
@@ -2246,7 +2246,7 @@ function IMPageInner() {
                             />
                             <span>{evt.label}</span>
                           </div>
-                          <div className="muted mono" style={{ fontSize: 11, marginTop: 4 }}>
+                          <div className="muted mono" style={{ fontSize: 12, marginTop: 4 }}>
                             {new Date(evt.at).toLocaleTimeString()}
                           </div>
                         </div>
@@ -2262,7 +2262,7 @@ function IMPageInner() {
                 onClick={() => setVizEventsCollapsed(false)}
                 title="展开"
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={14} />
               </button>
             ) : null}
           </div>
@@ -2308,14 +2308,14 @@ function IMPageInner() {
           {isSettingsOpen && (
             <div className="modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
               <div className="card" style={{ width: 460, maxWidth: "100%", background: "#18181b", padding: 24, borderRadius: 8 }}>
-                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 16 }}>{t.llmProviderSettings}</div>
+                <div style={{ fontWeight: 700, fontSize: 24, marginBottom: 16 }}>{t.llmProviderSettings}</div>
                 <div style={{ marginBottom: 12 }}>
-                  <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#a1a1aa" }}>Provider</label>
+                  <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>Provider</label>
                   <select
                     className="input"
                     value={appSettings?.llmProvider || "minimax"}
                     onChange={(e) => setAppSettings({ ...appSettings, llmProvider: e.target.value as AppSettings["llmProvider"] })}
-                    style={{ width: "100%", padding: "8px 12px", background: "#27272a", color: "#e4e4e7", border: "1px solid #3f3f46", borderRadius: 6 }}
+                    style={{ width: "100%", padding: "8px 12px", background: "#27272a", color: "var(--ink)", border: "1px solid #3f3f46", borderRadius: 8 }}
                   >
                     <option value="minimax">MiniMax</option>
                     <option value="ark">Ark (Volcengine)</option>
@@ -2325,11 +2325,11 @@ function IMPageInner() {
                 {(appSettings?.llmProvider === "ark" || (!appSettings?.llmProvider && true)) && (
                   <>
                     <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#a1a1aa" }}>{t.apiKey}</label>
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.apiKey}</label>
                       <input className="input" type="password" placeholder="Ark API Key" value={appSettings?.arkApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, arkApiKey: e.target.value })} />
                     </div>
                     <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#a1a1aa" }}>{t.model}</label>
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.model}</label>
                       <input className="input" placeholder="kimi-k2.5" value={appSettings?.arkModel || ""} onChange={(e) => setAppSettings({ ...appSettings, arkModel: e.target.value })} />
                     </div>
                   </>
@@ -2337,11 +2337,11 @@ function IMPageInner() {
                 {appSettings?.llmProvider === "openrouter" && (
                   <>
                     <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#a1a1aa" }}>API Key</label>
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>API Key</label>
                       <input className="input" type="password" placeholder="OpenRouter API Key" value={appSettings?.openRouterApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, openRouterApiKey: e.target.value })} />
                     </div>
                     <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#a1a1aa" }}>Model</label>
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>Model</label>
                       <input className="input" placeholder="openai/gpt-4o" value={appSettings?.openRouterModel || ""} onChange={(e) => setAppSettings({ ...appSettings, openRouterModel: e.target.value })} />
                     </div>
                   </>
@@ -2349,11 +2349,11 @@ function IMPageInner() {
                 {appSettings?.llmProvider === "minimax" && (
                   <>
                     <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#a1a1aa" }}>API Key</label>
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>API Key</label>
                       <input className="input" type="password" placeholder="MiniMax API Key" value={appSettings?.minimaxApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, minimaxApiKey: e.target.value })} />
                     </div>
                     <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "#a1a1aa" }}>Model</label>
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>Model</label>
                       <input className="input" placeholder="MiniMax-M2.1" value={appSettings?.minimaxModel || ""} onChange={(e) => setAppSettings({ ...appSettings, minimaxModel: e.target.value })} />
                     </div>
                   </>

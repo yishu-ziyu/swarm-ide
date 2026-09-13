@@ -63,7 +63,7 @@ export function PixelNavSidebar({
             style={{
               width: 32,
               height: 32,
-              borderRadius: 10,
+              borderRadius: 8,
               background: "rgba(245, 158, 11, 0.1)",
               display: "flex",
               alignItems: "center",
@@ -71,14 +71,14 @@ export function PixelNavSidebar({
               border: "1px solid rgba(245, 158, 11, 0.15)",
             }}
           >
-            <Hexagon size={18} color="#f59e0b" />
+            <Hexagon size={20} color="#f59e0b" />
           </div>
           <div>
             <div
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: 700,
-                color: "#f5f5f7",
+                color: "var(--ink)",
                 letterSpacing: "0.05em",
                 textTransform: "uppercase",
                 fontFamily: '"JetBrains Mono", monospace',
@@ -88,8 +88,8 @@ export function PixelNavSidebar({
             </div>
             <div
               style={{
-                fontSize: 9,
-                color: "#6b6b6b",
+                fontSize: 12,
+                color: "var(--ink-3)",
                 marginTop: 2,
                 fontFamily: '"JetBrains Mono", monospace',
               }}
@@ -114,7 +114,7 @@ export function PixelNavSidebar({
                 alignItems: "center",
                 gap: 10,
                 padding: "9px 14px",
-                borderRadius: 10,
+                borderRadius: 8,
                 marginBottom: 2,
                 border: "none",
                 background: isActive ? "rgba(167, 139, 250, 0.1)" : "transparent",
@@ -146,7 +146,7 @@ export function PixelNavSidebar({
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}
             >
-              <Icon size={16} />
+              <Icon size={14} />
               <span>{item.label}</span>
             </motion.button>
           );
@@ -159,7 +159,7 @@ export function PixelNavSidebar({
           style={{
             width: "100%",
             padding: "10px 16px",
-            borderRadius: 10,
+            borderRadius: 8,
             background: "#7c3aed",
             color: "white",
             border: "none",
@@ -206,10 +206,10 @@ export function PixelNavSidebar({
               borderRadius: 8,
               border: "none",
               background: "transparent",
-              color: "#6b6b6b",
+              color: "var(--ink-3)",
               cursor: "pointer",
               transition: "all 0.2s",
-              fontSize: 9,
+              fontSize: 12,
               fontFamily: '"JetBrains Mono", monospace',
               letterSpacing: "0.03em",
               textTransform: "uppercase",
@@ -223,7 +223,7 @@ export function PixelNavSidebar({
               e.currentTarget.style.background = "transparent";
             }}
           >
-            <Icon size={16} />
+            <Icon size={14} />
             <span>{label}</span>
           </button>
         ))}

@@ -126,21 +126,21 @@ function StatCard({ icon: Icon, label, value, color, delay }: {
         <div style={{
           width: 36,
           height: 36,
-          borderRadius: 10,
+          borderRadius: 8,
           background: `${color}15`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           border: `1px solid ${color}20`,
         }}>
-          <Icon size={18} color={color} />
+          <Icon size={14} color={color} />
         </div>
-        <span style={{ fontSize: 13, color: "#86868b", fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: 13, color: "var(--ink-3)", fontWeight: 500 }}>{label}</span>
       </div>
       <div style={{
-        fontSize: 32,
+        fontSize: 24,
         fontWeight: 700,
-        color: "#f5f5f7",
+        color: "var(--ink)",
         letterSpacing: "-0.02em",
         fontFamily: "'JetBrains Mono', monospace",
       }}>
@@ -162,7 +162,7 @@ function EdgeRow({ edge, fromLabel, toLabel }: {
       animate={{ opacity: 1, x: 0 }}
       style={{
         padding: "14px 18px",
-        borderRadius: 12,
+        borderRadius: 16,
         background: "rgba(26, 26, 26, 0.4)",
         border: "1px solid rgba(255, 255, 255, 0.05)",
         marginBottom: 8,
@@ -179,22 +179,22 @@ function EdgeRow({ edge, fromLabel, toLabel }: {
           <span style={{
             fontSize: 12,
             fontWeight: 600,
-            color: "#a78bfa",
+            color: "var(--ink)",
             background: "rgba(167, 139, 250, 0.1)",
             padding: "2px 8px",
-            borderRadius: 6,
+            borderRadius: 8,
             whiteSpace: "nowrap",
           }}>
             {fromLabel}
           </span>
-          <span style={{ color: "#6b6b6b", fontSize: 12 }}>→</span>
+          <span style={{ color: "var(--ink-3)", fontSize: 12 }}>→</span>
           <span style={{
             fontSize: 12,
             fontWeight: 600,
             color: "#34d399",
             background: "rgba(52, 211, 153, 0.1)",
             padding: "2px 8px",
-            borderRadius: 6,
+            borderRadius: 8,
             whiteSpace: "nowrap",
           }}>
             {toLabel}
@@ -203,7 +203,7 @@ function EdgeRow({ edge, fromLabel, toLabel }: {
         <span style={{
           fontSize: 12,
           fontWeight: 600,
-          color: "#f5f5f7",
+          color: "var(--ink)",
           fontFamily: "'JetBrains Mono', monospace",
           flexShrink: 0,
         }}>
@@ -211,8 +211,8 @@ function EdgeRow({ edge, fromLabel, toLabel }: {
         </span>
       </div>
       <div style={{
-        fontSize: 11,
-        color: "#6b6b6b",
+        fontSize: 12,
+        color: "var(--ink-3)",
         fontFamily: "'JetBrains Mono', monospace",
         marginTop: 8,
       }}>
@@ -257,10 +257,10 @@ export default function GraphPage() {
 
   if (!session) {
     return (
-      <div style={{
+      <div className="compact-apple" style={{
         minHeight: "100vh",
         background: "#0d0d0d",
-        color: "#f5f5f7",
+        color: "var(--ink)",
         padding: 40,
       }}>
         <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center", paddingTop: 80 }}>
@@ -270,18 +270,18 @@ export default function GraphPage() {
             transition={{ duration: 0.5 }}
           >
             <NetworkIllustration />
-            <h1 style={{ margin: "24px 0 12px", fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em" }}>
+            <h1 style={{ margin: "24px 0 12px", fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em" }}>
               {t.agentGraph}
             </h1>
-            <p style={{ color: "#86868b", marginBottom: 24, fontSize: 14 }}>
+            <p style={{ color: "var(--ink-3)", marginBottom: 24, fontSize: 14 }}>
               可视化智能体之间的协作关系与消息流向
             </p>
             <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 32 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#6b6b6b" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--ink-3)" }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#a78bfa" }} />
                 智能体节点
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#6b6b6b" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--ink-3)" }}>
                 <div style={{ width: 16, height: 1, background: "rgba(167, 139, 250, 0.3)" }} />
                 消息连接
               </div>
@@ -291,7 +291,7 @@ export default function GraphPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            style={{ color: "#86868b", marginBottom: 20 }}
+            style={{ color: "var(--ink-3)", marginBottom: 20 }}
           >
             {t.noWorkspacesTip}
           </motion.p>
@@ -309,14 +309,14 @@ export default function GraphPage() {
                 padding: "10px 20px",
                 background: "#7c3aed",
                 color: "white",
-                borderRadius: 12,
+                borderRadius: 16,
                 fontWeight: 500,
                 fontSize: 14,
                 textDecoration: "none",
                 boxShadow: "0 2px 8px rgba(124, 58, 237, 0.3)",
               }}
             >
-              <MessageSquare size={16} />
+              <MessageSquare size={14} />
               {t.openIM}
             </Link>
           </motion.div>
@@ -326,10 +326,10 @@ export default function GraphPage() {
   }
 
   return (
-    <div style={{
+    <div className="compact-apple" style={{
       minHeight: "100vh",
       background: "#0d0d0d",
-      color: "#f5f5f7",
+      color: "var(--ink)",
       padding: "40px 24px",
     }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -349,20 +349,20 @@ export default function GraphPage() {
             <div style={{
               width: 44,
               height: 44,
-              borderRadius: 12,
+              borderRadius: 16,
               background: "rgba(52, 211, 153, 0.1)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               border: "1px solid rgba(52, 211, 153, 0.15)",
             }}>
-              <Network size={22} color="#34d399" />
+              <Network size={20} color="#34d399" />
             </div>
             <div>
               <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em" }}>
                 {t.agentGraph}
               </h1>
-              <p style={{ margin: "4px 0 0", fontSize: 13, color: "#86868b" }}>
+              <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--ink-3)" }}>
                 {t.workspacesTip}
               </p>
             </div>
@@ -378,8 +378,8 @@ export default function GraphPage() {
                 padding: "8px 16px",
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 10,
-                color: "#86868b",
+                borderRadius: 8,
+                color: "var(--ink-3)",
                 fontSize: 13,
                 fontWeight: 500,
                 textDecoration: "none",
@@ -400,7 +400,7 @@ export default function GraphPage() {
             style={{
               background: "rgba(239, 68, 68, 0.08)",
               border: "1px solid rgba(239, 68, 68, 0.2)",
-              borderRadius: 12,
+              borderRadius: 16,
               padding: 16,
               marginBottom: 24,
               color: "#ef4444",
@@ -430,7 +430,7 @@ export default function GraphPage() {
           style={{
             background: "rgba(26, 26, 26, 0.4)",
             border: "1px solid rgba(255, 255, 255, 0.06)",
-            borderRadius: 20,
+            borderRadius: 16,
             overflow: "hidden",
           }}
         >
@@ -441,14 +441,14 @@ export default function GraphPage() {
             alignItems: "center",
             gap: 10,
           }}>
-            <Activity size={16} color="#86868b" />
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#f5f5f7" }}>
+            <Activity size={14} color="#86868b" />
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)" }}>
               {t.recent || "Recent Activity"}
             </span>
             <span style={{
               marginLeft: "auto",
-              fontSize: 11,
-              color: "#6b6b6b",
+              fontSize: 12,
+              color: "var(--ink-3)",
               fontFamily: "'JetBrains Mono', monospace",
             }}>
               {edges.length} connections
@@ -459,7 +459,7 @@ export default function GraphPage() {
               <div style={{
                 textAlign: "center",
                 padding: 48,
-                color: "#6b6b6b",
+                color: "var(--ink-3)",
                 fontSize: 13,
               }}>
                 <motion.div
@@ -467,9 +467,9 @@ export default function GraphPage() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.5 }}
                 >
-                  <Share2 size={32} style={{ margin: "0 auto 12px", opacity: 0.3 }} />
+                  <Share2 size={20} style={{ margin: "0 auto 12px", opacity: 0.3 }} />
                   <p>{t.noMessagesYet}</p>
-                  <p style={{ fontSize: 11, marginTop: 4 }}>智能体之间的消息将显示在这里</p>
+                  <p style={{ fontSize: 12, marginTop: 4 }}>智能体之间的消息将显示在这里</p>
                 </motion.div>
               </div>
             ) : (

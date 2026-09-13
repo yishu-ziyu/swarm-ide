@@ -214,27 +214,27 @@ function MiniChatWidget({ onClose }: { onClose?: () => void }) {
   };
 
   return (
-    <div className="absolute bottom-4 left-4 w-80 bg-[#121215] border border-[#27272a] rounded-xl overflow-hidden shadow-2xl">
+    <div className="absolute bottom-4 left-4 w-80 bg-[#121215] border border-[#27272a] rounded-card overflow-hidden shadow-2xl">
       {/* Header */}
       <div className="px-4 py-3 border-b border-[#27272a] flex items-center justify-between bg-[#18181b]">
-        <span className="text-sm font-semibold text-[#fafafa]">Quick Chat</span>
+        <span className="text-emphasis font-semibold text-ink">Quick Chat</span>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setIsMinimized(!isMinimized)}
-            className="p-1 text-[#a1a1aa] hover:text-[#fafafa] transition-colors"
+            className="p-1 text-ink-2 hover:text-ink transition-colors"
           >
             {isMinimized ? (
-              <Maximize2 className="w-4 h-4" />
+              <Maximize2 className="w-3.5 h-3.5" />
             ) : (
-              <Minimize2 className="w-4 h-4" />
+              <Minimize2 className="w-3.5 h-3.5" />
             )}
           </button>
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1 text-[#a1a1aa] hover:text-[#fafafa] transition-colors"
+              className="p-1 text-ink-2 hover:text-ink transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
@@ -247,10 +247,10 @@ function MiniChatWidget({ onClose }: { onClose?: () => void }) {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`text-xs p-2 rounded-lg ${
+                className={`text-caption p-2 rounded-lg ${
                   msg.isUser
                     ? "bg-[#a78bfa] text-white ml-8"
-                    : "bg-[#18181b] text-[#a1a1aa] mr-8"
+                    : "bg-[#18181b] text-ink-2 mr-8"
                 }`}
               >
                 {msg.text}
@@ -266,13 +266,13 @@ function MiniChatWidget({ onClose }: { onClose?: () => void }) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder="Type a message..."
-              className="flex-1 bg-[#18181b] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-[#fafafa] outline-none focus:border-[#a78bfa]"
+              className="flex-1 bg-[#18181b] border border-[#27272a] rounded-lg px-3 py-2 text-caption text-ink outline-none focus:border-[#a78bfa]"
             />
             <button
               onClick={handleSend}
               className="p-2 bg-[#a78bfa] rounded-lg hover:bg-[#8b5cf6] transition-colors"
             >
-              <Send className="w-4 h-4 text-white" />
+              <Send className="w-3.5 h-3.5 text-white" />
             </button>
           </div>
         </>
@@ -302,43 +302,43 @@ function CanvasControls({
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#121215] border border-[#27272a] rounded-lg p-2">
       <button
         onClick={onZoomOut}
-        className="p-2 text-[#a1a1aa] hover:text-[#fafafa] hover:bg-[#18181b] rounded-lg transition-colors"
+        className="p-2 text-ink-2 hover:text-ink hover:bg-[#18181b] rounded-lg transition-colors"
         title="Zoom Out"
       >
-        <ZoomOut className="w-4 h-4" />
+        <ZoomOut className="w-3.5 h-3.5" />
       </button>
 
-      <div className="px-3 text-xs text-[#a1a1aa] font-mono min-w-[60px] text-center">
+      <div className="px-3 text-caption text-ink-2 font-mono min-w-[60px] text-center">
         {Math.round(transform.scale * 100)}%
       </div>
 
       <button
         onClick={onZoomIn}
-        className="p-2 text-[#a1a1aa] hover:text-[#fafafa] hover:bg-[#18181b] rounded-lg transition-colors"
+        className="p-2 text-ink-2 hover:text-ink hover:bg-[#18181b] rounded-lg transition-colors"
         title="Zoom In"
       >
-        <ZoomIn className="w-4 h-4" />
+        <ZoomIn className="w-3.5 h-3.5" />
       </button>
 
-      <div className="w-px h-6 bg-[#27272a]" />
+      <div className="w-px h-5 bg-[#27272a]" />
 
       <button
         onClick={onReset}
-        className="p-2 text-[#a1a1aa] hover:text-[#fafafa] hover:bg-[#18181b] rounded-lg transition-colors"
+        className="p-2 text-ink-2 hover:text-ink hover:bg-[#18181b] rounded-lg transition-colors"
         title="Reset View"
       >
-        <RotateCcw className="w-4 h-4" />
+        <RotateCcw className="w-3.5 h-3.5" />
       </button>
 
-      <div className="w-px h-6 bg-[#27272a]" />
+      <div className="w-px h-5 bg-[#27272a]" />
 
       {onAddNode && (
         <button
           onClick={onAddNode}
-          className="p-2 text-[#a1a1aa] hover:text-[#fafafa] hover:bg-[#18181b] rounded-lg transition-colors"
+          className="p-2 text-ink-2 hover:text-ink hover:bg-[#18181b] rounded-lg transition-colors"
           title="Add Node"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
         </button>
       )}
     </div>
@@ -364,7 +364,7 @@ function CanvasNodeComponent({
 
   return (
     <div
-      className={`absolute w-48 bg-[#121215] border-2 rounded-xl p-4 cursor-grab active:cursor-grabbing select-none transition-shadow ${
+      className={`absolute w-48 bg-[#121215] border-2 rounded-card p-4 cursor-grab active:cursor-grabbing select-none transition-shadow ${
         isSelected ? "shadow-2xl shadow-[#a78bfa]/20" : ""
       }`}
       style={{
@@ -384,22 +384,22 @@ function CanvasNodeComponent({
           className="w-2 h-2 rounded-full"
           style={{ backgroundColor: colors.border }}
         />
-        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: colors.text }}>
+        <span className="text-caption font-semibold uppercase tracking-wider" style={{ color: colors.text }}>
           {node.type}
         </span>
       </div>
 
       {/* Node Title */}
-      <h3 className="text-sm font-bold text-[#fafafa] mb-1 truncate">{node.title}</h3>
+      <h3 className="text-emphasis font-bold text-ink mb-1 truncate">{node.title}</h3>
 
       {/* Node Description */}
-      <p className="text-xs text-[#a1a1aa] line-clamp-2">{node.description}</p>
+      <p className="text-caption text-ink-2 line-clamp-2">{node.description}</p>
 
       {/* Node Data (if any) */}
       {node.data?.tpm && (
         <div className="mt-3 pt-3 border-t border-[#27272a]">
-          <span className="text-xs text-[#a1a1aa]">TPM: </span>
-          <span className="text-xs font-mono text-[#34d399]">{node.data.tpm}</span>
+          <span className="text-caption text-ink-2">TPM: </span>
+          <span className="text-caption font-mono text-[#34d399]">{node.data.tpm}</span>
         </div>
       )}
 

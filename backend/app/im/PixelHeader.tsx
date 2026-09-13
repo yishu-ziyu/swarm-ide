@@ -42,9 +42,9 @@ export function PixelHeader({
             display: "flex",
             alignItems: "center",
             gap: 10,
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: 700,
-            color: "#f5f5f7",
+            color: "var(--ink)",
             letterSpacing: "-0.02em",
           }}
           whileHover={{ scale: 1.02 }}
@@ -60,7 +60,7 @@ export function PixelHeader({
             border: "1px solid rgba(167, 139, 250, 0.2)",
           }}
           >
-            <Hexagon size={16} color="#a78bfa" />
+            <Hexagon size={20} color="#a78bfa" />
           </div>
           <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 14 }}>
             Swarm IDE
@@ -112,13 +112,13 @@ export function PixelHeader({
           style={{
             width: 36,
             height: 36,
-            borderRadius: 10,
+            borderRadius: 8,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             background: "rgba(255,255,255,0.04)",
             border: "1px solid rgba(255,255,255,0.06)",
-            color: "#86868b",
+            color: "var(--ink-3)",
             cursor: "pointer",
             transition: "all 0.2s",
           }}
@@ -132,7 +132,7 @@ export function PixelHeader({
             e.currentTarget.style.color = "#86868b";
           }}
         >
-          {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          {isDark ? <Sun size={20} /> : <Moon size={20} />}
         </button>
 
         <button
@@ -140,13 +140,13 @@ export function PixelHeader({
           style={{
             width: 36,
             height: 36,
-            borderRadius: 10,
+            borderRadius: 8,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             background: "rgba(255,255,255,0.04)",
             border: "1px solid rgba(255,255,255,0.06)",
-            color: "#86868b",
+            color: "var(--ink-3)",
             cursor: "pointer",
             transition: "all 0.2s",
           }}
@@ -160,7 +160,7 @@ export function PixelHeader({
             e.currentTarget.style.color = "#86868b";
           }}
         >
-          <Settings size={16} />
+          <Settings size={20} />
         </button>
       </div>
     </header>

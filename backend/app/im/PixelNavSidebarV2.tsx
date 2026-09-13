@@ -20,15 +20,15 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { id: "inbox", label: "Inbox", icon: <Inbox className="w-4 h-4" /> },
-  { id: "projects", label: "Projects", icon: <FolderOpen className="w-4 h-4" />, active: true },
-  { id: "agents", label: "Agents", icon: <Bot className="w-4 h-4" /> },
-  { id: "sessions", label: "Sessions", icon: <History className="w-4 h-4" /> },
+  { id: "inbox", label: "Inbox", icon: <Inbox className="w-3.5 h-3.5" /> },
+  { id: "projects", label: "Projects", icon: <FolderOpen className="w-3.5 h-3.5" />, active: true },
+  { id: "agents", label: "Agents", icon: <Bot className="w-3.5 h-3.5" /> },
+  { id: "sessions", label: "Sessions", icon: <History className="w-3.5 h-3.5" /> },
 ];
 
 const bottomItems: NavItem[] = [
-  { id: "settings", label: "Settings", icon: <Settings className="w-4 h-4" /> },
-  { id: "docs", label: "Docs", icon: <FileText className="w-4 h-4" /> },
+  { id: "settings", label: "Settings", icon: <Settings className="w-3.5 h-3.5" /> },
+  { id: "docs", label: "Docs", icon: <FileText className="w-3.5 h-3.5" /> },
 ];
 
 interface PixelNavSidebarV2Props {
@@ -49,14 +49,14 @@ export function PixelNavSidebarV2({
       {/* Logo Section */}
       {view === "chat" && (
         <div className="flex items-center gap-3 mb-8 px-2">
-          <div className="w-8 h-8 rounded bg-[#a78bfa]/20 flex items-center justify-center">
-            <Hexagon className="w-5 h-5 text-[#a78bfa]" />
+          <div className="w-8 h-8 rounded-nav bg-[#a78bfa] flex items-center justify-center">
+            <Hexagon className="w-5 h-5 text-white" />
           </div>
           <div>
-            <div className="font-bold text-[#fafafa] text-sm leading-tight">
+            <div className="font-bold text-ink text-sm leading-tight">
               Swarm-IDE
             </div>
-            <div className="text-[10px] text-[#a1a1aa] uppercase tracking-widest font-semibold">
+            <div className="text-caption text-ink-2 uppercase tracking-widest font-medium">
               v1.0.4-alpha
             </div>
           </div>
@@ -65,13 +65,13 @@ export function PixelNavSidebarV2({
 
       {view === "canvas" && (
         <div className="mb-6">
-          <p className="text-xs text-[#a1a1aa] opacity-60 ml-9">v1.0.4-alpha</p>
+          <p className="text-caption text-ink-2 opacity-60 ml-9">v1.0.4-alpha</p>
         </div>
       )}
 
       {/* New Session Button */}
-      <button className="w-full bg-[#a78bfa] hover:bg-[#8b5cf6] text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 mb-6 transition-all">
-        <Plus className="w-4 h-4" />
+      <button className="w-full bg-[#a78bfa] hover:bg-[#8b5cf6] text-white font-medium py-2 px-4 rounded-full flex items-center justify-center gap-2 mb-6 transition-all">
+        <Plus className="w-3.5 h-3.5" />
         New Session
       </button>
 
@@ -81,10 +81,10 @@ export function PixelNavSidebarV2({
           <button
             key={item.id}
             onClick={() => handleNavClick(item.id)}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm ${
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-nav transition-all text-emphasis ${
               item.active
-                ? "bg-[#27272a] text-[#fafafa] font-semibold"
-                : "text-[#a1a1aa] hover:bg-[#18181b] hover:text-[#fafafa]"
+                ? "bg-[#27272a] text-ink font-semibold"
+                : "text-ink-2 hover:bg-[#18181b] hover:text-ink"
             }`}
           >
             {item.icon}
@@ -99,7 +99,7 @@ export function PixelNavSidebarV2({
           <button
             key={item.id}
             onClick={() => handleNavClick(item.id)}
-            className="w-full flex items-center gap-3 px-3 py-2 text-[#a1a1aa] hover:bg-[#18181b] hover:text-[#fafafa] rounded-lg transition-all text-sm"
+            className="w-full flex items-center gap-3 px-3 py-2 text-ink-2 hover:bg-[#18181b] hover:text-ink rounded-nav transition-all text-emphasis"
           >
             {item.icon}
             <span>{item.label}</span>

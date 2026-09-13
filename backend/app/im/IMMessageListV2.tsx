@@ -46,7 +46,7 @@ function ThinkingBlock({
 
   return (
     <div className="max-w-3xl mx-auto w-full">
-      <div className="bg-[#0c0c0f]/80 backdrop-blur border border-[#27272a] rounded-xl overflow-hidden">
+      <div className="bg-[#0c0c0f]/80 backdrop-blur border border-[#27272a] rounded-card overflow-hidden">
         {/* Header */}
         <button
           onClick={() => setExpanded(!expanded)}
@@ -54,20 +54,20 @@ function ThinkingBlock({
         >
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-[#34d399] animate-pulse" />
-            <span className="text-xs font-semibold text-[#34d399]">
+            <span className="text-caption font-semibold text-[#34d399]">
               Thinking...
             </span>
           </div>
           {expanded ? (
-            <ChevronDown className="w-4 h-4 text-[#a1a1aa]" />
+            <ChevronDown className="w-3.5 h-3.5 text-ink-2" />
           ) : (
-            <ChevronRight className="w-4 h-4 text-[#a1a1aa]" />
+            <ChevronRight className="w-3.5 h-3.5 text-ink-2" />
           )}
         </button>
 
         {/* Content */}
         {expanded && (
-          <div className="p-4 text-xs font-mono text-[#a1a1aa] leading-relaxed">
+          <div className="p-4 text-caption font-mono text-ink-2 leading-relaxed">
             <pre className="whitespace-pre-wrap">{content}</pre>
           </div>
         )}
@@ -96,9 +96,9 @@ function AIMessage({
 
       {/* Message Content */}
       <div className="space-y-4 flex-1">
-        <div className="bg-[#121215] border border-[#27272a] rounded-2xl rounded-tl-none p-5 text-[#fafafa] leading-relaxed text-sm">
+        <div className="bg-[#121215] border border-[#27272a] rounded-2xl rounded-tl-none p-5 text-ink leading-relaxed text-emphasis">
           {displayContent || (
-            <span className="text-[#a1a1aa] animate-pulse">
+            <span className="text-ink-2 animate-pulse">
               等待回复...
             </span>
           )}
@@ -106,7 +106,7 @@ function AIMessage({
 
         {/* Streaming indicator */}
         {isStreaming && (
-          <div className="flex items-center gap-2 text-xs text-[#a1a1aa]">
+          <div className="flex items-center gap-2 text-caption text-ink-2">
             <div className="w-2 h-2 rounded-full bg-[#a78bfa] animate-pulse" />
             <span>正在思考...</span>
           </div>
@@ -120,13 +120,13 @@ function HumanMessage({ message }: { message: Message }) {
   return (
     <div className="flex justify-end gap-4 max-w-4xl mx-auto w-full">
       {/* Message Content */}
-      <div className="max-w-2xl bg-[#a78bfa] text-white border border-[#a78bfa]/20 rounded-2xl rounded-tr-none p-5 shadow-lg text-sm">
+      <div className="max-w-2xl bg-[#a78bfa] text-white border border-[#a78bfa]/20 rounded-2xl rounded-tr-none p-5 shadow-lg text-emphasis">
         {message.content}
       </div>
 
       {/* User Avatar */}
       <div className="w-8 h-8 rounded-lg bg-[#18181b] border border-[#27272a] flex-shrink-0 overflow-hidden">
-        <User className="w-full h-full text-[#a1a1aa]" />
+        <User className="w-full h-full text-ink-2" />
       </div>
     </div>
   );
@@ -135,7 +135,7 @@ function HumanMessage({ message }: { message: Message }) {
 function SystemMessage({ content }: { content: string }) {
   return (
     <div className="flex justify-center">
-      <p className="text-[11px] text-[#a1a1aa] font-mono tracking-widest uppercase bg-[#18181b] px-4 py-1.5 rounded-full border border-[#27272a]">
+      <p className="text-caption text-ink-2 font-mono tracking-widest uppercase bg-[#18181b] px-4 py-1.5 rounded-full border border-[#27272a]">
         {content}
       </p>
     </div>
@@ -194,12 +194,12 @@ export function IMMessageListV2({
       {/* Tool streaming indicator */}
       {isStreaming && streamingState?.tools && (
         <div className="max-w-3xl mx-auto w-full">
-          <div className="bg-[#18181b] border border-[#27272a] rounded-lg p-3 text-xs">
-            <div className="flex items-center gap-2 text-[#a78bfa] mb-2">
-              <Sparkles className="w-3 h-3" />
+          <div className="bg-[#18181b] border border-[#27272a] rounded-lg p-3 text-caption">
+            <div className="flex items-center gap-2 text-ink-2 mb-2">
+              <Sparkles className="w-3.5 h-3.5" />
               <span className="font-medium">Tool Execution</span>
             </div>
-            <pre className="text-[#a1a1aa] font-mono overflow-x-auto">
+            <pre className="text-ink-2 font-mono overflow-x-auto">
               {streamingState.tools}
             </pre>
           </div>

@@ -27,21 +27,21 @@ export function PixelHeaderV2({
       {/* Left Section - Logo and Nav */}
       <div className="flex items-center gap-8">
         {/* Logo */}
-        <div className="text-lg font-black tracking-tighter text-[#fafafa] flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-[#a78bfa]/20 flex items-center justify-center">
-            <Hexagon className="w-4 h-4 text-[#a78bfa]" />
+        <div className="text-title font-semibold tracking-tight text-ink flex items-center gap-2">
+          <div className="w-5 h-5 rounded-nav bg-[#a78bfa] flex items-center justify-center">
+            <Hexagon className="w-3.5 h-3.5 text-white" />
           </div>
           Swarm-IDE
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="flex gap-6 font-medium text-sm">
+        <nav className="flex gap-6 font-medium text-emphasis">
           <button
             onClick={() => onViewChange("chat")}
             className={`pb-1 border-b-2 transition-colors ${
               view === "chat"
-                ? "text-[#a78bfa] border-[#a78bfa]"
-                : "text-[#a1a1aa] border-transparent hover:text-[#fafafa]"
+                ? "text-ink border-[#a78bfa]"
+                : "text-ink-2 border-transparent hover:text-ink"
             }`}
           >
             Chat
@@ -50,8 +50,8 @@ export function PixelHeaderV2({
             onClick={() => onViewChange("canvas")}
             className={`pb-1 border-b-2 transition-colors ${
               view === "canvas"
-                ? "text-[#a78bfa] border-[#a78bfa]"
-                : "text-[#a1a1aa] border-transparent hover:text-[#fafafa]"
+                ? "text-ink border-[#a78bfa]"
+                : "text-ink-2 border-transparent hover:text-ink"
             }`}
           >
             Canvas
@@ -64,11 +64,11 @@ export function PixelHeaderV2({
         {/* Search Bar - Only visible on Canvas view */}
         {view === "canvas" && (
           <div className="flex items-center bg-[#121215] rounded-lg px-3 py-1.5 border border-[#27272a]">
-            <Search className="w-4 h-4 text-[#a1a1aa] mr-2" />
+            <Search className="w-3.5 h-3.5 text-ink-2 mr-2" />
             <input
               type="text"
               placeholder="Search agents..."
-              className="bg-transparent border-none focus:ring-0 text-xs w-48 text-[#fafafa] outline-none"
+              className="bg-transparent border-none focus:ring-0 text-caption w-48 text-ink outline-none"
               onChange={(e) => onSearch?.(e.target.value)}
             />
           </div>
@@ -76,19 +76,19 @@ export function PixelHeaderV2({
 
         {/* Chat Search - visible on Chat view */}
         {view === "chat" && (
-          <button className="p-2 text-[#a1a1aa] hover:bg-[#18181b] rounded-lg transition-colors">
+          <button className="p-2 text-ink-2 hover:bg-[#18181b] rounded-nav transition-colors">
             <Search className="w-5 h-5" />
           </button>
         )}
 
         {/* Help Button */}
-        <button className="p-2 text-[#a1a1aa] hover:bg-[#18181b] rounded-lg transition-colors">
+        <button className="p-2 text-ink-2 hover:bg-[#18181b] rounded-nav transition-colors">
           <HelpCircle className="w-5 h-5" />
         </button>
 
         {/* Settings Button */}
         <button
-          className="p-2 text-[#a1a1aa] hover:bg-[#18181b] rounded-lg transition-colors"
+          className="p-2 text-ink-2 hover:bg-[#18181b] rounded-nav transition-colors"
           onClick={onSettings}
         >
           <Settings className="w-5 h-5" />
@@ -96,7 +96,7 @@ export function PixelHeaderV2({
 
         {/* User Avatar */}
         <div className="w-8 h-8 rounded-full border border-[#27272a] bg-[#18181b] flex items-center justify-center overflow-hidden">
-          <User className="w-4 h-4 text-[#a1a1aa]" />
+          <User className="w-3.5 h-3.5 text-ink-2" />
         </div>
       </div>
     </header>

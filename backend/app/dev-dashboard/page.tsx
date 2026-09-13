@@ -67,7 +67,7 @@ function FileTree({ node, depth = 0 }: { node: FileNode; depth?: number }) {
         }}
         onClick={() => isDir && setExpanded(!expanded)}
       >
-        <span style={{ color: "#666", fontSize: "10px" }}>
+        <span style={{ color: "var(--ink-3)", fontSize: "12px" }}>
           {isDir ? (expanded ? "▼" : "▶") : "📄"}
         </span>
         <span style={{ color: isDir ? "#F59E0B" : "#E8E8E8" }}>{node.name}</span>
@@ -112,7 +112,7 @@ function LogEntry({ log }: { log: LogEntry }) {
         backgroundColor: log.level === "phase" ? "rgba(168, 85, 247, 0.1)" : "transparent",
       }}
     >
-      <span style={{ color: "#666", marginRight: "8px" }}>[{time}]</span>
+      <span style={{ color: "var(--ink-3)", marginRight: "8px" }}>[{time}]</span>
       <span style={{ marginRight: "6px" }}>{levelIcons[log.level]}</span>
       {log.phase && (
         <span
@@ -120,8 +120,8 @@ function LogEntry({ log }: { log: LogEntry }) {
             backgroundColor: levelColors[log.level],
             color: "#fff",
             padding: "1px 6px",
-            borderRadius: "4px",
-            fontSize: "10px",
+            borderRadius: "8px",
+            fontSize: "12px",
             marginRight: "8px",
           }}
         >
@@ -130,7 +130,7 @@ function LogEntry({ log }: { log: LogEntry }) {
       )}
       <span style={{ color: levelColors[log.level] }}>{log.message}</span>
       {log.details && (
-        <div style={{ color: "#888", marginTop: "2px", marginLeft: "24px" }}>
+        <div style={{ color: "var(--ink-3)", marginTop: "2px", marginLeft: "24px" }}>
           {log.details}
         </div>
       )}
@@ -148,14 +148,14 @@ function ProgressBar({ phase }: { phase: Phase }) {
   return (
     <div style={{ marginBottom: "12px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-        <span style={{ fontSize: "13px", color: "#E8E8E8" }}>{phase.name}</span>
-        <span style={{ fontSize: "12px", color: "#888" }}>{phase.progress}%</span>
+        <span style={{ fontSize: "13px", color: "var(--ink)" }}>{phase.name}</span>
+        <span style={{ fontSize: "12px", color: "var(--ink-3)" }}>{phase.progress}%</span>
       </div>
       <div
         style={{
           height: "8px",
           backgroundColor: "#2a2a2a",
-          borderRadius: "4px",
+          borderRadius: "8px",
           overflow: "hidden",
         }}
       >
@@ -266,9 +266,10 @@ export default function DevDashboard() {
       style={{
         minHeight: "100vh",
         backgroundColor: "#1A1A1A",
-        color: "#E8E8E8",
+        color: "var(--ink)",
         padding: "20px",
-        fontFamily: "system-ui, sans-serif",
+        fontFamily: '-apple-system, "SF Pro Text", "SF Pro Display", "PingFang SC", "Helvetica Neue", sans-serif',
+        letterSpacing: "-0.15px",
       }}
     >
       {/* Header */}
@@ -284,12 +285,12 @@ export default function DevDashboard() {
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <span style={{ fontSize: "24px" }}>🐝</span>
-          <h1 style={{ fontSize: "20px", fontWeight: 600, margin: 0 }}>
+          <h1 style={{ fontSize: "24px", fontWeight: 600, margin: 0 }}>
             蜂群IDE - 开发仪表板
           </h1>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <span style={{ fontSize: "12px", color: "#888" }}>
+          <span style={{ fontSize: "12px", color: "var(--ink-3)" }}>
             最后更新: {lastUpdate || "连接中..."}
           </span>
           <div
@@ -316,7 +317,7 @@ export default function DevDashboard() {
         <div
           style={{
             backgroundColor: "#242424",
-            borderRadius: "12px",
+            borderRadius: "16px",
             padding: "16px",
             border: "1px solid #333",
           }}
@@ -333,7 +334,7 @@ export default function DevDashboard() {
         <div
           style={{
             backgroundColor: "#242424",
-            borderRadius: "12px",
+            borderRadius: "16px",
             padding: "16px",
             border: "1px solid #333",
           }}
@@ -351,7 +352,7 @@ export default function DevDashboard() {
             }}
           >
             {logs.length === 0 ? (
-              <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
+              <div style={{ padding: "20px", textAlign: "center", color: "var(--ink-3)" }}>
                 等待日志更新...
               </div>
             ) : (
@@ -364,7 +365,7 @@ export default function DevDashboard() {
         <div
           style={{
             backgroundColor: "#242424",
-            borderRadius: "12px",
+            borderRadius: "16px",
             padding: "16px",
             border: "1px solid #333",
           }}
@@ -381,7 +382,7 @@ export default function DevDashboard() {
         <div
           style={{
             backgroundColor: "#242424",
-            borderRadius: "12px",
+            borderRadius: "16px",
             padding: "16px",
             border: "1px solid #333",
           }}
@@ -408,8 +409,8 @@ export default function DevDashboard() {
                   gap: "8px",
                 }}
               >
-                <span style={{ color: "#444" }}>☐</span>
-                <span style={{ color: "#888" }}>{todo}</span>
+                <span style={{ color: "var(--ink-3)" }}>☐</span>
+                <span style={{ color: "var(--ink-3)" }}>{todo}</span>
               </div>
             ))}
           </div>

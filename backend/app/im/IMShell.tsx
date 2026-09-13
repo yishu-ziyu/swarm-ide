@@ -106,7 +106,7 @@ export function IMShell({
   return (
     <div
       ref={containerRef}
-      className="flex flex-col md:flex-row h-full w-full overflow-hidden"
+      className="compact-apple flex flex-col md:flex-row h-full w-full overflow-hidden"
       style={
         {
           "--left-width": `${currentLeftWidth}px`,
@@ -163,7 +163,7 @@ export function IMShell({
 
       {focusMode !== "none" && (
         <button
-          className="fixed top-4 right-4 z-50 px-4 py-2 text-xs font-medium bg-[#ef4444] text-white rounded-lg shadow-lg hover:bg-[#dc2626] transition-all"
+          className="fixed top-4 right-4 z-50 px-4 py-2 text-caption font-medium bg-[#ef4444] text-white rounded-lg shadow-lg hover:bg-[#dc2626] transition-all"
           style={{ fontFamily: '"JetBrains Mono", monospace' }}
           onClick={() => onFocusModeChange?.("none")}
         >
@@ -172,7 +172,7 @@ export function IMShell({
       )}
 
       <div
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex gap-1 p-1 rounded-xl"
+        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex gap-1 p-1 rounded-card"
         style={{
           background: "rgba(26, 26, 26, 0.8)",
           backdropFilter: "blur(12px)",
@@ -181,10 +181,10 @@ export function IMShell({
         }}
       >
         <button
-          className={`px-3 py-2 text-xs font-medium rounded-lg transition-all ${
+          className={`px-3 py-2 text-caption font-medium rounded-lg transition-all ${
             focusMode === "left"
               ? "bg-[#a78bfa] text-white"
-              : "bg-transparent text-[#86868b] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#f5f5f7]"
+              : "bg-transparent text-ink-3 hover:bg-[rgba(255,255,255,0.04)] hover:text-ink"
           }`}
           style={{ fontFamily: '"JetBrains Mono", monospace' }}
           onClick={() => toggleFocusMode("left")}
@@ -192,10 +192,10 @@ export function IMShell({
           左侧
         </button>
         <button
-          className={`px-3 py-2 text-xs font-medium rounded-lg transition-all ${
+          className={`px-3 py-2 text-caption font-medium rounded-lg transition-all ${
             focusMode === "mid"
               ? "bg-[#a78bfa] text-white"
-              : "bg-transparent text-[#86868b] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#f5f5f7]"
+              : "bg-transparent text-ink-3 hover:bg-[rgba(255,255,255,0.04)] hover:text-ink"
           }`}
           style={{ fontFamily: '"JetBrains Mono", monospace' }}
           onClick={() => toggleFocusMode("mid")}
@@ -203,10 +203,10 @@ export function IMShell({
           中间
         </button>
         <button
-          className={`px-3 py-2 text-xs font-medium rounded-lg transition-all ${
+          className={`px-3 py-2 text-caption font-medium rounded-lg transition-all ${
             focusMode === "right"
               ? "bg-[#a78bfa] text-white"
-              : "bg-transparent text-[#86868b] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#f5f5f7]"
+              : "bg-transparent text-ink-3 hover:bg-[rgba(255,255,255,0.04)] hover:text-ink"
           }`}
           style={{ fontFamily: '"JetBrains Mono", monospace' }}
           onClick={() => toggleFocusMode("right")}

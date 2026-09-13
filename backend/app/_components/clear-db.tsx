@@ -41,7 +41,7 @@ export default function ClearDbButton() {
         style={{
           background: "rgba(239, 68, 68, 0.1)",
           borderColor: "var(--error-color)",
-          color: "var(--error-color)",
+          color: "#ef4444",
         }}
       >
         {busy === "reset" ? t.resetting : t.resetDbAndRedis}

@@ -28,10 +28,10 @@ export function WorkspaceSwitcher({
         className="bg-[#eeeeed] px-3 py-1 flex items-center gap-2 border-2 border-[#867461]/30 cursor-pointer hover:bg-[#e8e8e7] step-transition"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className="font-mono text-xs text-[#855300] font-bold">
+        <span className="font-mono text-xs text-ink font-bold">
           {currentWorkspace}
         </span>
-        <span className="material-symbols-outlined text-sm text-[#867461]">
+        <span className="material-symbols-outlined text-sm text-ink-2">
           {isOpen ? "swap_vert" : "swap_vert"}
         </span>
       </button>
@@ -76,7 +76,7 @@ export function WorkspaceSwitcher({
             
             {/* Create New */}
             <button
-              className="w-full px-3 py-2 flex items-center gap-2 text-[#867461] hover:bg-[#f9f9f8]"
+              className="w-full px-3 py-2 flex items-center gap-2 text-ink-2 hover:bg-[#f9f9f8]"
               onClick={() => {
                 onCreateWorkspace?.();
                 setIsOpen(false);

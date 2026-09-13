@@ -52,7 +52,7 @@ export function PixelAgentGraph({
           fontWeight: 600,
           fontSize: 13,
           letterSpacing: "0.05em",
-          color: "#f5f5f7",
+          color: "var(--ink)",
           textTransform: "uppercase",
         }}>
           Agent Network
@@ -67,11 +67,11 @@ export function PixelAgentGraph({
             background: "rgba(255,255,255,0.05)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 8,
-            color: "#86868b",
+            color: "var(--ink-3)",
             cursor: "pointer",
             transition: "all 0.2s",
           }}>
-            <Plus size={16} />
+            <Plus size={14} />
           </button>
           <button style={{
             width: 32,
@@ -82,11 +82,11 @@ export function PixelAgentGraph({
             background: "rgba(255,255,255,0.05)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 8,
-            color: "#86868b",
+            color: "var(--ink-3)",
             cursor: "pointer",
             transition: "all 0.2s",
           }}>
-            <Minus size={16} />
+            <Minus size={14} />
           </button>
           <button style={{
             width: 32,
@@ -97,11 +97,11 @@ export function PixelAgentGraph({
             background: "rgba(255,255,255,0.05)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 8,
-            color: "#86868b",
+            color: "var(--ink-3)",
             cursor: "pointer",
             transition: "all 0.2s",
           }}>
-            <RotateCcw size={16} />
+            <RotateCcw size={14} />
           </button>
         </div>
       </div>
@@ -130,7 +130,7 @@ export function PixelAgentGraph({
                 <div style={{
                   width: 64,
                   height: 64,
-                  borderRadius: 20,
+                  borderRadius: 16,
                   background: "rgba(124, 58, 237, 0.08)",
                   border: "1px solid rgba(124, 58, 237, 0.15)",
                   display: "flex",
@@ -138,12 +138,12 @@ export function PixelAgentGraph({
                   justifyContent: "center",
                   margin: "0 auto 16px",
                 }}>
-                  <Bot size={28} color="#a78bfa" />
+                  <Bot size={20} color="#a78bfa" />
                 </div>
-                <p style={{ fontSize: 14, color: "#86868b", fontWeight: 500 }}>
+                <p style={{ fontSize: 14, color: "var(--ink-3)", fontWeight: 500 }}>
                   No agents yet
                 </p>
-                <p style={{ fontSize: 12, color: "#6b6b6b", marginTop: 4, fontFamily: '"JetBrains Mono", monospace' }}>
+                <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4, fontFamily: '"JetBrains Mono", monospace' }}>
                   Deploy your first agent
                 </p>
               </div>
@@ -190,9 +190,9 @@ export function PixelAgentGraph({
                     whileTap={{ scale: 0.95 }}
                   >
                     {agent.role === "human" ? (
-                      <User size={24} color={color} />
+                      <User size={20} color={color} />
                     ) : (
-                      <Bot size={24} color={color} />
+                      <Bot size={20} color={color} />
                     )}
                   </motion.div>
 
@@ -220,12 +220,12 @@ export function PixelAgentGraph({
                     whiteSpace: "nowrap",
                   }}>
                     <span style={{
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: 500,
-                      color: "#f5f5f7",
+                      color: "var(--ink)",
                       background: "rgba(0,0,0,0.6)",
                       padding: "2px 8px",
-                      borderRadius: 6,
+                      borderRadius: 8,
                     }}>
                       {agent.name}
                     </span>
@@ -284,10 +284,10 @@ export function PixelAgentGraph({
         justifyContent: "space-between",
         alignItems: "center",
       }}>
-        <span style={{ fontSize: 11, color: "#86868b", fontFamily: '"JetBrains Mono", monospace' }}>
+        <span style={{ fontSize: 12, color: "var(--ink-3)", fontFamily: '"JetBrains Mono", monospace' }}>
           {agents.length} agents
         </span>
-        <span style={{ fontSize: 11, color: "#6b6b6b", fontFamily: '"JetBrains Mono", monospace' }}>
+        <span style={{ fontSize: 12, color: "var(--ink-3)", fontFamily: '"JetBrains Mono", monospace' }}>
           {agents.filter(a => a.status !== "offline").length} active
         </span>
       </div>

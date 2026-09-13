@@ -25,21 +25,21 @@ export default function LanguageSwitcher() {
         style={{
           width: 36,
           height: 36,
-          borderRadius: 10,
+          borderRadius: 8,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           background: "rgba(255,255,255,0.04)",
           border: "1px solid rgba(255,255,255,0.08)",
-          color: "#86868b",
+          color: "var(--ink-3)",
           cursor: "pointer",
           transition: "all 0.2s",
         }}
         title={theme === "light" ? "切换深色模式" : "Switch to light mode"}
-        whileHover={{ scale: 1.05, background: "rgba(255,255,255,0.08)", color: "#f5f5f7" }}
+        whileHover={{ scale: 1.05, background: "rgba(255,255,255,0.08)", color: "var(--ink)" }}
         whileTap={{ scale: 0.95 }}
       >
-        {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+        {theme === "light" ? <Moon size={14} /> : <Sun size={14} />}
       </motion.button>
 
       {/* Language Toggle */}

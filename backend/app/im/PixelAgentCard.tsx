@@ -34,7 +34,7 @@ const statusConfig = {
     glow: "shadow-[0_0_8px_rgba(167,139,250,0.4)]",
   },
   offline: {
-    color: "#6b6b6b",
+    color: "var(--ink-3)",
     label: "Offline",
     glow: "",
   },
@@ -102,7 +102,7 @@ export function PixelAgentCard({
         <div style={{
           width: 40,
           height: 40,
-          borderRadius: 12,
+          borderRadius: 16,
           background: isOffline ? "#2a2a2a" : `${config.color}15`,
           display: "flex",
           alignItems: "center",
@@ -122,7 +122,7 @@ export function PixelAgentCard({
             <span style={{
               fontSize: 13,
               fontWeight: 600,
-              color: "#f5f5f7",
+              color: "var(--ink)",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -139,19 +139,19 @@ export function PixelAgentCard({
                   boxShadow: isOffline ? "none" : `0 0 6px ${config.color}80`,
                 }}
               />
-              <span style={{ fontSize: 10, color: "#86868b", fontWeight: 500 }}>
+              <span style={{ fontSize: 12, color: "var(--ink-3)", fontWeight: 500 }}>
                 {config.label}
               </span>
             </div>
           </div>
-          <p style={{ fontSize: 11, color: "#86868b", margin: "4px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "4px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {role}
           </p>
         </div>
       </div>
 
       {description && (
-        <p style={{ fontSize: 11, color: "#6b6b6b", margin: "0 0 10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "0 0 10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {description}
         </p>
       )}
@@ -164,7 +164,7 @@ export function PixelAgentCard({
               style={{
                 height: 3,
                 flex: 1,
-                borderRadius: 2,
+                borderRadius: 8,
                 background: i <= Math.ceil(progress / 25)
                   ? config.color
                   : "rgba(255,255,255,0.06)",
