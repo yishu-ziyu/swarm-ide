@@ -55,11 +55,6 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "src/agents/memory.ts",
-    "src/agents/director.ts",
-    "src/lib/index.ts",
-    "src/lib/context",
-    "src/lib/runtime"
+    "node_modules"
   ]
 }

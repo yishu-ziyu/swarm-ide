@@ -20,3 +20,9 @@ backend/.agent_llm_requests/
 backend/.agent_stream_logs/
 global_state.txt
 .dev/
+
+# 运行时开发日志（dev-logger 写出的滚动文件）
+*.dev-log.json
+
+# 浏览器工具会话残留（含本地会话 token）
+.gstack/

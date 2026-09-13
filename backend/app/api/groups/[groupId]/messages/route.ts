@@ -13,8 +13,16 @@ export async function GET(
   const markRead = url.searchParams.get("markRead") === "true";
   const readerId = url.searchParams.get("readerId") ?? undefined;
 
+  // 游标分页参数透传：limit 截取条数，beforeTime 游标（早于该时间的消息）
+  const limitParam = url.searchParams.get("limit");
+  const limit = limitParam !== null ? Number.parseInt(limitParam, 10) : undefined;
+  const beforeTimeParam = url.searchParams.get("beforeTime");
+  const beforeTime = beforeTimeParam !== null ? new Date(beforeTimeParam) : undefined;
+
   const messages = await store.listMessages({
     groupId,
+    ...(limit !== undefined && Number.isFinite(limit) ? { limit } : {}),
+    ...(beforeTime !== undefined && !Number.isNaN(beforeTime.getTime()) ? { beforeTime } : {}),
   });
 
   if (markRead && readerId) {

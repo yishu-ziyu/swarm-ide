@@ -18,17 +18,6 @@ export {
   type BuiltTool,
 } from "./Tool";
 
-// Registry
-export {
-  globalToolRegistry,
-  initializeToolRegistry,
-  getToolRegistry,
-  toolRequiresPermission,
-  getPermissionDecision,
-  type ToolPermissionContext,
-  type PermissionMode,
-} from "./registry";
-
 // Built-in tools
 export {
   AgentTool,

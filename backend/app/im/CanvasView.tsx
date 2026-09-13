@@ -62,6 +62,8 @@ interface CanvasViewProps {
   onNodeClick?: (nodeId: string) => void;
   onNodeDrag?: (nodeId: string, x: number, y: number) => void;
   onAddNode?: () => void;
+  chatGroupId?: string | null;
+  chatSenderId?: string | null;
 }
 
 // ============================================================================
@@ -197,20 +199,91 @@ function MiniMap({
 // MiniChatWidget Component
 // ============================================================================
 
-function MiniChatWidget({ onClose }: { onClose?: () => void }) {
-  const [messages, setMessages] = useState<Array<{ id: string; text: string; isUser: boolean }>>([
-    { id: "1", text: "系统 initialized", isUser: false },
-  ]);
+type MiniChatMessage = { id: string; text: string; isUser: boolean };
+
+function MiniChatWidget({
+  onClose,
+  groupId,
+  senderId,
+}: {
+  onClose?: () => void;
+  groupId?: string | null;
+  senderId?: string | null;
+}) {
+  const [messages, setMessages] = useState<MiniChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  // 拉取该 group 的真实消息（与 IMShell 主流程同源：GET /api/groups/:id/messages）
+  const loadMessages = useCallback(async (): Promise<MiniChatMessage[] | null> => {
+    if (!groupId || !senderId) return null;
+    try {
+      const res = await fetch(
+        `/api/groups/${groupId}/messages?readerId=${encodeURIComponent(senderId)}`
+      );
+      if (!res.ok) {
+        throw new Error(`${res.status} ${res.statusText}`);
+      }
+      const data = (await res.json()) as {
+        messages: Array<{ id: string; senderId: string; content: string }>;
+      };
+      const next = (data.messages ?? []).map((m) => ({
+        id: m.id,
+        text: m.content,
+        isUser: m.senderId === senderId,
+      }));
+      setMessages(next);
+      return next;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      return null;
+    }
+  }, [groupId, senderId]);
 
-    setMessages((prev) => [...prev, { id: Date.now().toString(), text: input, isUser: true }]);
+  useEffect(() => {
+    setError(null);
+    void loadMessages();
+  }, [loadMessages]);
+
+  const handleSend = async () => {
+    const text = input.trim();
+    if (!text || isSending) return;
+    if (!groupId || !senderId) {
+      setError("会话未就绪：缺少 groupId 或 senderId");
+      return;
+    }
+
+    const optimisticId = `local-${Date.now()}`;
+    setMessages((prev) => [...prev, { id: optimisticId, text, isUser: true }]);
     setInput("");
+    setIsSending(true);
+    setError(null);
 
-    // TODO: Integrate with backend API
+    // 与 IMShell 主流程同源：POST /api/groups/:id/messages（agent 由后端唤醒）
+    try {
+      const res = await fetch(`/api/groups/${groupId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ senderId, content: text, contentType: "text" }),
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        throw new Error(`${res.status} ${res.statusText} ${detail}`);
+      }
+
+      // 轮询等待真实回复到达
+      for (let attempt = 0; attempt < 5; attempt++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const next = await loadMessages();
+        if (next && next.length > messages.length + 1) break;
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -244,6 +317,11 @@ function MiniChatWidget({ onClose }: { onClose?: () => void }) {
       {!isMinimized && (
         <>
           <div className="h-48 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+            {messages.length === 0 && !error && (
+              <div className="text-caption text-ink-2 text-center py-8">
+                {groupId && senderId ? "暂无消息" : "会话未就绪"}
+              </div>
+            )}
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -256,6 +334,14 @@ function MiniChatWidget({ onClose }: { onClose?: () => void }) {
                 {msg.text}
               </div>
             ))}
+            {error && (
+              <div className="text-caption p-2 rounded-lg bg-[#450a0a] text-[#fecaca]">
+                发送失败: {error}
+              </div>
+            )}
+            {isSending && (
+              <div className="text-caption text-ink-2 text-center">等待回复...</div>
+            )}
           </div>
 
           {/* Input */}
@@ -264,13 +350,16 @@ function MiniChatWidget({ onClose }: { onClose?: () => void }) {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void handleSend();
+              }}
               placeholder="Type a message..."
               className="flex-1 bg-[#18181b] border border-[#27272a] rounded-lg px-3 py-2 text-caption text-ink outline-none focus:border-[#a78bfa]"
             />
             <button
-              onClick={handleSend}
-              className="p-2 bg-[#a78bfa] rounded-lg hover:bg-[#8b5cf6] transition-colors"
+              onClick={() => void handleSend()}
+              disabled={isSending}
+              className="p-2 bg-[#a78bfa] rounded-lg hover:bg-[#8b5cf6] transition-colors disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5 text-white" />
             </button>
@@ -421,6 +510,8 @@ export function CanvasView({
   onNodeClick,
   onNodeDrag,
   onAddNode,
+  chatGroupId,
+  chatSenderId,
 }: CanvasViewProps) {
   // Use prop nodes or defaults
   const [nodes, setNodes] = useState<CanvasNode[]>(
@@ -656,7 +747,11 @@ export function CanvasView({
 
       {/* Mini Chat Widget */}
       {showMiniChat && (
-        <MiniChatWidget onClose={() => setShowMiniChat(false)} />
+        <MiniChatWidget
+          onClose={() => setShowMiniChat(false)}
+          groupId={chatGroupId}
+          senderId={chatSenderId}
+        />
       )}
 
       {/* Canvas Controls */}

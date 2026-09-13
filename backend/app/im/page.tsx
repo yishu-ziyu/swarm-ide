@@ -10,18 +10,14 @@ import { createCodePlugin } from "@streamdown/code";
 import { mermaid } from "@streamdown/mermaid";
 import { IMShell } from "./IMShell";
 import { IMMessageList } from "./IMMessageList";
-import { IMHistoryList } from "./IMHistoryList";
-// import { AgentGraphPanel } from "./AgentGraphPanel";
 import { PixelAgentGraph } from "./PixelAgentGraph";
 import { PixelHeader } from "./PixelHeader";
 import { PixelNavSidebar } from "./PixelNavSidebar";
-import { PixelAgentCard } from "./PixelAgentCard";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
 // V2 Components - New UI Design
 import { PixelNavSidebarV2 } from "./PixelNavSidebarV2";
 import { PixelHeaderV2 } from "./PixelHeaderV2";
-import { IMMessageListV2 } from "./IMMessageListV2";
 import { CanvasView, type CanvasNode, type CanvasConnection } from "./CanvasView";
 import { useLanguage } from "../_components/LanguageContext";
 import LanguageSwitcher from "../_components/LanguageSwitcher";
@@ -1805,6 +1801,8 @@ function IMPageInner() {
               color: b.kind === "create" ? "#34d399" : "#a78bfa",
             }))}
             onNodeClick={(id) => console.log("Node clicked:", id)}
+            chatGroupId={activeGroupId}
+            chatSenderId={session?.humanAgentId ?? null}
           />
         ) : (
         <>
