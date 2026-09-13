@@ -206,8 +206,9 @@ function cx(...classes: Array<string | false | undefined | null>) {
 }
 
 export default function IMPage() {
+  const { t } = useLanguage();
   return (
-    <Suspense fallback={<div style={{ padding: 24 }}>加载中...</div>}>
+    <Suspense fallback={<div style={{ padding: 24 }}>{t.loading}</div>}>
       <IMPageInner />
     </Suspense>
   );
@@ -287,6 +288,8 @@ function IMPageInner() {
   const midChatHeightRef = useRef(0);
   const nodeOffsetsRef = useRef<Record<string, { x: number; y: number }>>({});
   const groupsRef = useRef<Group[]>([]);
+  const tRef = useRef(t);
+  tRef.current = t;
   const beamTimeoutsRef = useRef<number[]>([]);
   const refreshQueueRef = useRef<{
     timer: number | null;
@@ -675,14 +678,14 @@ function IMPageInner() {
 
     const created = await api<WorkspaceDefaults>(`/api/workspaces`, {
       method: "POST",
-      body: JSON.stringify({ name: "Default Workspace" }),
+      body: JSON.stringify({ name: t.defaultWorkspaceName }),
     });
     saveSession(created);
     setSession(created);
     setActiveGroupId(created.defaultGroupId);
     setStatus("idle");
     void refreshAgents(created);
-  }, [refreshAgents]);
+  }, [refreshAgents, t]);
 
   const createWorkspace = useCallback(async (name?: string) => {
     setError(null);
@@ -690,7 +693,7 @@ function IMPageInner() {
     setStatus("boot");
     const created = await api<WorkspaceDefaults>(`/api/workspaces`, {
       method: "POST",
-      body: JSON.stringify({ name: name?.trim() || "New Workspace" }),
+      body: JSON.stringify({ name: name?.trim() || t.newWorkspaceName }),
     });
     saveSession(created);
     setSession(created);
@@ -699,7 +702,7 @@ function IMPageInner() {
     window.history.replaceState(null, "", "/im");
     void refreshAgents(created);
     return created;
-  }, [refreshAgents]);
+  }, [refreshAgents, t]);
 
   useEffect(() => {
     api<{ tokenLimit: number }>("/api/config")
@@ -995,7 +998,7 @@ function IMPageInner() {
     if (text.startsWith("/create") || text.startsWith("/hire")) {
       const role = text.replace(/^\/(create|hire)\s*/i, "").trim();
       if (!role) {
-        setError("Usage: /create <role>");
+        setError(t.usageCreateRole);
         return;
       }
 
@@ -1158,7 +1161,7 @@ function IMPageInner() {
           const role = payload.data?.agent?.role ?? "agent";
           const agentId = payload.data?.agent?.id as UUID | undefined;
           const parentId = payload.data?.agent?.parentId as UUID | null | undefined;
-          pushVizEvent(payload, `创建 ${role}`, "agent");
+          pushVizEvent(payload, `${tRef.current.vizCreated} ${role}`, "agent");
           if (agentId) {
             const fromId = parentId || session.humanAgentId;
             pushBeam({ fromId, toId: agentId, kind: "create", label: role });
@@ -1173,7 +1176,7 @@ function IMPageInner() {
           const senderRole = senderId
             ? agentRoleByIdRef.current.get(senderId) ?? senderId.slice(0, 6)
             : "unknown";
-          pushVizEvent(payload, `消息: ${senderRole}`, "message");
+          pushVizEvent(payload, `${tRef.current.vizMessage}: ${senderRole}`, "message");
           logVizDebug({
             type: "message_event",
             data: {
@@ -1211,7 +1214,7 @@ function IMPageInner() {
           const role = agentId
             ? agentRoleByIdRef.current.get(agentId) ?? agentId.slice(0, 6)
             : "agent";
-          const label = payload.event === "ui.agent.llm.start" ? `LLM 开始: ${role}` : `LLM 结束: ${role}`;
+          const label = payload.event === "ui.agent.llm.start" ? `${tRef.current.llmStart}: ${role}` : `${tRef.current.llmEnd}: ${role}`;
           pushVizEvent(payload, label, "llm");
           if (agentId) {
             setAgentStatusById((prev) => ({
@@ -1230,8 +1233,8 @@ function IMPageInner() {
             : "agent";
           const label =
             payload.event === "ui.agent.tool_call.start"
-              ? `工具开始: ${role} · ${toolName}`
-              : `工具结束: ${role} · ${toolName}`;
+              ? `${tRef.current.toolStart}: ${role} · ${toolName}`
+              : `${tRef.current.toolEnd}: ${role} · ${toolName}`;
           pushVizEvent(payload, label, "tool");
           if (agentId) {
             setAgentStatusById((prev) => ({
@@ -1240,7 +1243,7 @@ function IMPageInner() {
             }));
           }
         } else if (payload.event === "ui.agent.interrupt_all") {
-          pushVizEvent(payload, "停止全部 Agent", "agent");
+          pushVizEvent(payload, tRef.current.stopAllAgentsEvent, "agent");
           const ids = Array.isArray(payload.data?.agentIds)
             ? (payload.data.agentIds as UUID[])
             : [];
@@ -1593,6 +1596,14 @@ function IMPageInner() {
 
   const title = getGroupLabel(activeGroup);
 
+  const statusLabel: Record<string, string> = {
+    boot: t.loading,
+    groups: t.loadingGroups,
+    messages: t.loadingMessages,
+    send: t.sending,
+    idle: "",
+  };
+
   const toggleAgentCollapsed = useCallback((agentId: string) => {
     setCollapsedAgents((prev) => ({ ...prev, [agentId]: !prev[agentId] }));
   }, []);
@@ -1683,7 +1694,7 @@ function IMPageInner() {
         {g.contextTokens > 0 && (
           <div style={{ marginTop: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, marginBottom: 2 }}>
-              <span className="muted">Context</span>
+              <span className="muted">{t.context}</span>
               <span className="mono" style={{ color: (g.contextTokens / tokenLimit) > 0.8 ? "#ef4444" : (g.contextTokens / tokenLimit) > 0.5 ? "#facc15" : "#22c55e" }}>
                 {g.contextTokens.toLocaleString()}
                 <span className="muted" style={{ marginLeft: 4 }}>/ {tokenLimit.toLocaleString()}</span>
@@ -1754,7 +1765,7 @@ function IMPageInner() {
             <button
               className="btn"
               style={{ padding: "4px 8px" }}
-              title={t.error}
+              title={t.settings}
               onClick={() => setIsSettingsOpen(true)}
             >
               <svg className="w-3.5 h-3.5" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1775,10 +1786,10 @@ function IMPageInner() {
               disabled={!session || stoppingAgents}
               title={t.stoppingAgents}
             >
-              {stoppingAgents ? t.resetting : t.stopAllAgents}
+              {stoppingAgents ? t.stoppingAgents : t.stopAllAgents}
             </button>
             <div className="muted" style={{ fontSize: 12 }}>
-              {status !== "idle" ? `${status}...` : ""}
+              {status !== "idle" ? statusLabel[status] : ""}
             </div>
           </div>
         </div>
@@ -1980,10 +1991,10 @@ function IMPageInner() {
                     setVizOffset({ x: 0, y: 0 });
                   }}
                 >
-                  Reset
+                  {t.reset}
                 </button>
                 <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)", margin: "0 4px" }} />
-                <span style={{ fontSize: 12, color: "var(--ink-3)" }}>⌘ 滚轮缩放</span>
+                <span style={{ fontSize: 12, color: "var(--ink-3)" }}>{t.scrollZoomHint}</span>
               </div>
 
               <div
@@ -2195,21 +2206,21 @@ function IMPageInner() {
               {!vizEventsCollapsed ? (
                 <>
                   <div style={{ fontWeight: 700, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span>事件流</span>
+                    <span>{t.eventStream}</span>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span className="muted mono">{vizEvents.length}</span>
                       <button
                         type="button"
                         className="viz-events-toggle"
                         onClick={() => setVizEventsCollapsed(true)}
-                        title="收起"
+                        title={t.collapse}
                       >
                         <ChevronRight size={14} />
                       </button>
                     </div>
                   </div>
                   {vizEvents.length === 0 ? (
-                    <div className="muted">暂无事件</div>
+                    <div className="muted">{t.noEvents}</div>
                   ) : (
                     vizEvents
                       .slice(-6)
@@ -2258,7 +2269,7 @@ function IMPageInner() {
                 type="button"
                 className="viz-events-toggle floating"
                 onClick={() => setVizEventsCollapsed(false)}
-                title="展开"
+                title={t.expand}
               >
                 <ChevronLeft size={14} />
               </button>
@@ -2308,7 +2319,7 @@ function IMPageInner() {
               <div className="card" style={{ width: 460, maxWidth: "100%", background: "#18181b", padding: 24, borderRadius: 8 }}>
                 <div style={{ fontWeight: 700, fontSize: 24, marginBottom: 16 }}>{t.llmProviderSettings}</div>
                 <div style={{ marginBottom: 12 }}>
-                  <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>Provider</label>
+                  <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.provider}</label>
                   <select
                     className="input"
                     value={appSettings?.llmProvider || "minimax"}
@@ -2324,7 +2335,7 @@ function IMPageInner() {
                   <>
                     <div style={{ marginBottom: 12 }}>
                       <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.apiKey}</label>
-                      <input className="input" type="password" placeholder="Ark API Key" value={appSettings?.arkApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, arkApiKey: e.target.value })} />
+                      <input className="input" type="password" placeholder={t.arkApiKeyPlaceholder} value={appSettings?.arkApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, arkApiKey: e.target.value })} />
                     </div>
                     <div style={{ marginBottom: 12 }}>
                       <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.model}</label>
@@ -2335,11 +2346,11 @@ function IMPageInner() {
                 {appSettings?.llmProvider === "openrouter" && (
                   <>
                     <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>API Key</label>
-                      <input className="input" type="password" placeholder="OpenRouter API Key" value={appSettings?.openRouterApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, openRouterApiKey: e.target.value })} />
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.apiKey}</label>
+                      <input className="input" type="password" placeholder={t.openRouterApiKeyPlaceholder} value={appSettings?.openRouterApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, openRouterApiKey: e.target.value })} />
                     </div>
                     <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>Model</label>
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.model}</label>
                       <input className="input" placeholder="openai/gpt-4o" value={appSettings?.openRouterModel || ""} onChange={(e) => setAppSettings({ ...appSettings, openRouterModel: e.target.value })} />
                     </div>
                   </>
@@ -2347,11 +2358,11 @@ function IMPageInner() {
                 {appSettings?.llmProvider === "minimax" && (
                   <>
                     <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>API Key</label>
-                      <input className="input" type="password" placeholder="MiniMax API Key" value={appSettings?.minimaxApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, minimaxApiKey: e.target.value })} />
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.apiKey}</label>
+                      <input className="input" type="password" placeholder={t.minimaxApiKeyPlaceholder} value={appSettings?.minimaxApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, minimaxApiKey: e.target.value })} />
                     </div>
                     <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>Model</label>
+                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.model}</label>
                       <input className="input" placeholder="MiniMax-M2.1" value={appSettings?.minimaxModel || ""} onChange={(e) => setAppSettings({ ...appSettings, minimaxModel: e.target.value })} />
                     </div>
                   </>

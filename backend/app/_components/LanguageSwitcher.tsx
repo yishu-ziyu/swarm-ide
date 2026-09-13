@@ -35,7 +35,7 @@ export default function LanguageSwitcher() {
           cursor: "pointer",
           transition: "all 0.2s",
         }}
-        title={theme === "light" ? "切换深色模式" : "Switch to light mode"}
+        title={theme === "light" ? t.switchToDark : t.switchToLight}
         whileHover={{ scale: 1.05, background: "rgba(255,255,255,0.08)", color: "var(--ink)" }}
         whileTap={{ scale: 0.95 }}
       >

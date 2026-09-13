@@ -43,6 +43,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    document.documentElement.setAttribute("lang", language === "zh" ? "zh-CN" : "en");
+  }, [language]);
+
+  useEffect(() => {
     if (mounted) {
       document.documentElement.setAttribute("data-theme", theme);
       document.body.className = theme;

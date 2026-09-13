@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useLanguage } from "../_components/LanguageContext";
 
 type FocusMode = "none" | "left" | "mid" | "right";
 
@@ -26,6 +27,7 @@ export function IMShell({
   onLeftWidthChange,
   onRightWidthChange,
 }: IMShellProps) {
+  const { t } = useLanguage();
   const [currentLeftWidth, setCurrentLeftWidth] = useState(leftWidth);
   const [currentRightWidth, setCurrentRightWidth] = useState(rightWidth);
   const [isDraggingLeft, setIsDraggingLeft] = useState(false);
@@ -167,7 +169,7 @@ export function IMShell({
           style={{ fontFamily: '"JetBrains Mono", monospace' }}
           onClick={() => onFocusModeChange?.("none")}
         >
-          退出专注
+          {t.exitFocus}
         </button>
       )}
 
@@ -189,7 +191,7 @@ export function IMShell({
           style={{ fontFamily: '"JetBrains Mono", monospace' }}
           onClick={() => toggleFocusMode("left")}
         >
-          左侧
+          {t.focusLeft}
         </button>
         <button
           className={`px-3 py-2 text-caption font-medium rounded-lg transition-all ${
@@ -200,7 +202,7 @@ export function IMShell({
           style={{ fontFamily: '"JetBrains Mono", monospace' }}
           onClick={() => toggleFocusMode("mid")}
         >
-          中间
+          {t.focusMiddle}
         </button>
         <button
           className={`px-3 py-2 text-caption font-medium rounded-lg transition-all ${
@@ -211,7 +213,7 @@ export function IMShell({
           style={{ fontFamily: '"JetBrains Mono", monospace' }}
           onClick={() => toggleFocusMode("right")}
         >
-          右侧
+          {t.focusRight}
         </button>
       </div>
     </div>

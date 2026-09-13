@@ -13,6 +13,8 @@ import {
   Minimize2,
   Maximize2,
 } from "lucide-react";
+import { useLanguage } from "../_components/LanguageContext";
+import type { Translations } from "../i18n";
 
 // ============================================================================
 // Types
@@ -77,41 +79,43 @@ const NODE_COLORS: Record<NodeType, { border: string; bg: string; text: string }
   security: { border: "#ef4444", bg: "#121215", text: "#ef4444" },
 };
 
-const DEFAULT_NODES: CanvasNode[] = [
-  {
-    id: "node-1",
-    type: "master",
-    title: "Swarm_Core_01",
-    description: "Orchestrating agent workflows and token distribution.",
-    x: 150,
-    y: 120,
-  },
-  {
-    id: "node-2",
-    type: "live",
-    title: "Analytic_Node",
-    description: "Real-time telemetry and error pattern matching.",
-    x: 550,
-    y: 400,
-    data: { tpm: "14.2k" },
-  },
-  {
-    id: "node-3",
-    type: "doc",
-    title: "Docu_Gen",
-    description: "Syncing with latest v1.0.4 docs.",
-    x: 850,
-    y: 200,
-  },
-  {
-    id: "node-4",
-    type: "security",
-    title: "Security_Sentry",
-    description: "Anomaly detected in session 0x44F.",
-    x: 250,
-    y: 600,
-  },
-];
+function buildDefaultNodes(t: Translations): CanvasNode[] {
+  return [
+    {
+      id: "node-1",
+      type: "master",
+      title: "Swarm_Core_01",
+      description: t.canvasNodeOrchestrating,
+      x: 150,
+      y: 120,
+    },
+    {
+      id: "node-2",
+      type: "live",
+      title: "Analytic_Node",
+      description: t.canvasNodeTelemetry,
+      x: 550,
+      y: 400,
+      data: { tpm: "14.2k" },
+    },
+    {
+      id: "node-3",
+      type: "doc",
+      title: "Docu_Gen",
+      description: t.canvasNodeDocs,
+      x: 850,
+      y: 200,
+    },
+    {
+      id: "node-4",
+      type: "security",
+      title: "Security_Sentry",
+      description: t.canvasNodeAnomaly,
+      x: 250,
+      y: 600,
+    },
+  ];
+}
 
 const DEFAULT_CONNECTIONS: CanvasConnection[] = [
   { id: "conn-1", from: "node-1", to: "node-2", color: "#a78bfa" },
@@ -210,6 +214,7 @@ function MiniChatWidget({
   groupId?: string | null;
   senderId?: string | null;
 }) {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<MiniChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isMinimized, setIsMinimized] = useState(false);
@@ -251,7 +256,7 @@ function MiniChatWidget({
     const text = input.trim();
     if (!text || isSending) return;
     if (!groupId || !senderId) {
-      setError("会话未就绪：缺少 groupId 或 senderId");
+      setError(t.sessionNotReadyDetail);
       return;
     }
 
@@ -290,7 +295,7 @@ function MiniChatWidget({
     <div className="absolute bottom-4 left-4 w-80 bg-[#121215] border border-[#27272a] rounded-card overflow-hidden shadow-2xl">
       {/* Header */}
       <div className="px-4 py-3 border-b border-[#27272a] flex items-center justify-between bg-[#18181b]">
-        <span className="text-emphasis font-semibold text-ink">Quick Chat</span>
+        <span className="text-emphasis font-semibold text-ink">{t.quickChat}</span>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setIsMinimized(!isMinimized)}
@@ -319,7 +324,7 @@ function MiniChatWidget({
           <div className="h-48 overflow-y-auto p-3 space-y-2 custom-scrollbar">
             {messages.length === 0 && !error && (
               <div className="text-caption text-ink-2 text-center py-8">
-                {groupId && senderId ? "暂无消息" : "会话未就绪"}
+                {groupId && senderId ? t.noMessages : t.sessionNotReady}
               </div>
             )}
             {messages.map((msg) => (
@@ -336,11 +341,11 @@ function MiniChatWidget({
             ))}
             {error && (
               <div className="text-caption p-2 rounded-lg bg-[#450a0a] text-[#fecaca]">
-                发送失败: {error}
+                {t.sendFailed} {error}
               </div>
             )}
             {isSending && (
-              <div className="text-caption text-ink-2 text-center">等待回复...</div>
+              <div className="text-caption text-ink-2 text-center">{t.waitingForReply}</div>
             )}
           </div>
 
@@ -353,7 +358,7 @@ function MiniChatWidget({
               onKeyDown={(e) => {
                 if (e.key === "Enter") void handleSend();
               }}
-              placeholder="Type a message..."
+              placeholder={t.newMessage}
               className="flex-1 bg-[#18181b] border border-[#27272a] rounded-lg px-3 py-2 text-caption text-ink outline-none focus:border-[#a78bfa]"
             />
             <button
@@ -387,12 +392,14 @@ function CanvasControls({
   onAddNode?: () => void;
   transform: Transform;
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#121215] border border-[#27272a] rounded-lg p-2">
       <button
         onClick={onZoomOut}
         className="p-2 text-ink-2 hover:text-ink hover:bg-[#18181b] rounded-lg transition-colors"
-        title="Zoom Out"
+        title={t.zoomOut}
       >
         <ZoomOut className="w-3.5 h-3.5" />
       </button>
@@ -404,7 +411,7 @@ function CanvasControls({
       <button
         onClick={onZoomIn}
         className="p-2 text-ink-2 hover:text-ink hover:bg-[#18181b] rounded-lg transition-colors"
-        title="Zoom In"
+        title={t.zoomIn}
       >
         <ZoomIn className="w-3.5 h-3.5" />
       </button>
@@ -414,7 +421,7 @@ function CanvasControls({
       <button
         onClick={onReset}
         className="p-2 text-ink-2 hover:text-ink hover:bg-[#18181b] rounded-lg transition-colors"
-        title="Reset View"
+        title={t.resetView}
       >
         <RotateCcw className="w-3.5 h-3.5" />
       </button>
@@ -425,7 +432,7 @@ function CanvasControls({
         <button
           onClick={onAddNode}
           className="p-2 text-ink-2 hover:text-ink hover:bg-[#18181b] rounded-lg transition-colors"
-          title="Add Node"
+          title={t.addNode}
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
@@ -514,8 +521,9 @@ export function CanvasView({
   chatSenderId,
 }: CanvasViewProps) {
   // Use prop nodes or defaults
-  const [nodes, setNodes] = useState<CanvasNode[]>(
-    propNodes.length > 0 ? propNodes : DEFAULT_NODES
+  const { t } = useLanguage();
+  const [nodes, setNodes] = useState<CanvasNode[]>(() =>
+    propNodes.length > 0 ? propNodes : buildDefaultNodes(t)
   );
   const [connections] = useState<CanvasConnection[]>(
     propConnections.length > 0 ? propConnections : DEFAULT_CONNECTIONS
@@ -537,6 +545,18 @@ export function CanvasView({
       setNodes(propNodes);
     }
   }, [propNodes]);
+
+  // Re-localize the demo nodes' descriptions when the language changes
+  useEffect(() => {
+    if (propNodes.length > 0) return;
+    const localized = buildDefaultNodes(t);
+    setNodes((prev) =>
+      prev.map((n) => {
+        const match = localized.find((d) => d.id === n.id);
+        return match ? { ...n, description: match.description } : n;
+      })
+    );
+  }, [t, propNodes.length]);
 
   // Pointer handlers
   const handlePointerDown = useCallback(
@@ -611,13 +631,13 @@ export function CanvasView({
       id: `node-${Date.now()}`,
       type: "live",
       title: `Agent_${Date.now().toString(36).slice(-4).toUpperCase()}`,
-      description: "New agent node",
+      description: t.newAgentNode,
       x: 400 + Math.random() * 200,
       y: 300 + Math.random() * 200,
     };
     setNodes((prev) => [...prev, newNode]);
     onAddNode?.();
-  }, [onAddNode]);
+  }, [onAddNode, t]);
 
   // Get node positions for connection lines
   const getNodeCenter = (nodeId: string) => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from "react";
+import { useLanguage } from "../_components/LanguageContext";
 
 type Workspace = {
   id: string;
@@ -20,6 +21,7 @@ export function WorkspaceSwitcher({
   onWorkspaceChange,
   onCreateWorkspace,
 }: WorkspaceSwitcherProps) {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -84,7 +86,7 @@ export function WorkspaceSwitcher({
             >
               <span className="material-symbols-outlined text-sm">add</span>
               <span className="font-mono text-xs">
-                Create New...
+                {t.createWorkspace}
               </span>
             </button>
           </div>

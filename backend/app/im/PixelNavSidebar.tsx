@@ -11,6 +11,7 @@ import {
   Cpu,
   HelpCircle,
 } from "lucide-react";
+import { useLanguage } from "../_components/LanguageContext";
 
 type NavItem = {
   id: string;
@@ -25,20 +26,22 @@ type PixelNavSidebarProps = {
   onDeployAgent?: () => void;
 };
 
-const navItems: NavItem[] = [
-  { id: "fleet", label: "Fleet", icon: Users },
-  { id: "modules", label: "Modules", icon: Puzzle },
-  { id: "terminal", label: "Terminal", icon: Terminal },
-  { id: "logs", label: "Logs", icon: ScrollText },
-  { id: "deploy", label: "Deploy", icon: Rocket },
-];
-
 export function PixelNavSidebar({
   version = "0.8.1-BETA",
   activeNav = "fleet",
   onNavChange,
   onDeployAgent,
 }: PixelNavSidebarProps) {
+  const { t } = useLanguage();
+
+  const navItems: NavItem[] = [
+    { id: "fleet", label: t.fleet, icon: Users },
+    { id: "modules", label: t.modules, icon: Puzzle },
+    { id: "terminal", label: t.terminal, icon: Terminal },
+    { id: "logs", label: t.logs, icon: ScrollText },
+    { id: "deploy", label: t.deploy, icon: Rocket },
+  ];
+
   return (
     <aside
       style={{
@@ -178,7 +181,7 @@ export function PixelNavSidebar({
           whileTap={{ scale: 0.98 }}
           onClick={onDeployAgent}
         >
-          Deploy Agent
+          {t.deployAgent}
         </motion.button>
       </div>
 
@@ -192,8 +195,8 @@ export function PixelNavSidebar({
         }}
       >
         {[
-          { icon: Cpu, label: "System" },
-          { icon: HelpCircle, label: "Help" },
+          { icon: Cpu, label: t.system },
+          { icon: HelpCircle, label: t.help },
         ].map(({ icon: Icon, label }) => (
           <button
             key={label}

@@ -8,6 +8,7 @@ import {
   Hexagon,
   User,
 } from "lucide-react";
+import { useLanguage } from "../_components/LanguageContext";
 
 interface PixelHeaderV2Props {
   view: "chat" | "canvas";
@@ -22,6 +23,8 @@ export function PixelHeaderV2({
   onSearch,
   onSettings,
 }: PixelHeaderV2Props) {
+  const { t } = useLanguage();
+
   return (
     <header className="h-14 border-b border-[#27272a] bg-[#09090b]/80 backdrop-blur flex items-center justify-between px-6 shrink-0 z-50">
       {/* Left Section - Logo and Nav */}
@@ -44,7 +47,7 @@ export function PixelHeaderV2({
                 : "text-ink-2 border-transparent hover:text-ink"
             }`}
           >
-            Chat
+            {t.chat}
           </button>
           <button
             onClick={() => onViewChange("canvas")}
@@ -54,7 +57,7 @@ export function PixelHeaderV2({
                 : "text-ink-2 border-transparent hover:text-ink"
             }`}
           >
-            Canvas
+            {t.canvas}
           </button>
         </nav>
       </div>
@@ -67,7 +70,7 @@ export function PixelHeaderV2({
             <Search className="w-3.5 h-3.5 text-ink-2 mr-2" />
             <input
               type="text"
-              placeholder="Search agents..."
+              placeholder={t.searchAgents}
               className="bg-transparent border-none focus:ring-0 text-caption w-48 text-ink outline-none"
               onChange={(e) => onSearch?.(e.target.value)}
             />

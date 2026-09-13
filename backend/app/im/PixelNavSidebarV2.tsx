@@ -11,6 +11,7 @@ import {
   Hexagon,
   Plus,
 } from "lucide-react";
+import { useLanguage } from "../_components/LanguageContext";
 
 type NavItem = {
   id: string;
@@ -18,18 +19,6 @@ type NavItem = {
   icon: React.ReactNode;
   active?: boolean;
 };
-
-const navItems: NavItem[] = [
-  { id: "inbox", label: "Inbox", icon: <Inbox className="w-3.5 h-3.5" /> },
-  { id: "projects", label: "Projects", icon: <FolderOpen className="w-3.5 h-3.5" />, active: true },
-  { id: "agents", label: "Agents", icon: <Bot className="w-3.5 h-3.5" /> },
-  { id: "sessions", label: "Sessions", icon: <History className="w-3.5 h-3.5" /> },
-];
-
-const bottomItems: NavItem[] = [
-  { id: "settings", label: "Settings", icon: <Settings className="w-3.5 h-3.5" /> },
-  { id: "docs", label: "Docs", icon: <FileText className="w-3.5 h-3.5" /> },
-];
 
 interface PixelNavSidebarV2Props {
   view?: "chat" | "canvas";
@@ -40,6 +29,20 @@ export function PixelNavSidebarV2({
   view = "chat",
   onNavigate,
 }: PixelNavSidebarV2Props) {
+  const { t } = useLanguage();
+
+  const navItems: NavItem[] = [
+    { id: "inbox", label: t.inbox, icon: <Inbox className="w-3.5 h-3.5" /> },
+    { id: "projects", label: t.projects, icon: <FolderOpen className="w-3.5 h-3.5" />, active: true },
+    { id: "agents", label: t.agents, icon: <Bot className="w-3.5 h-3.5" /> },
+    { id: "sessions", label: t.sessions, icon: <History className="w-3.5 h-3.5" /> },
+  ];
+
+  const bottomItems: NavItem[] = [
+    { id: "settings", label: t.settings, icon: <Settings className="w-3.5 h-3.5" /> },
+    { id: "docs", label: t.docs, icon: <FileText className="w-3.5 h-3.5" /> },
+  ];
+
   const handleNavClick = (id: string) => {
     onNavigate?.(id);
   };
@@ -72,7 +75,7 @@ export function PixelNavSidebarV2({
       {/* New Session Button */}
       <button className="w-full bg-[#a78bfa] hover:bg-[#8b5cf6] text-white font-medium py-2 px-4 rounded-full flex items-center justify-center gap-2 mb-6 transition-all">
         <Plus className="w-3.5 h-3.5" />
-        New Session
+        {t.newSession}
       </button>
 
       {/* Main Navigation */}

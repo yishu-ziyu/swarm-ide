@@ -12,15 +12,17 @@ type PixelHeaderProps = {
 };
 
 export function PixelHeader({
-  title = "Workspace",
+  title,
   onThemeToggle,
   isDark = true,
   onSettingsClick
 }: PixelHeaderProps) {
   const { t } = useLanguage();
+  const headerTitle = title ?? t.workspace;
 
   return (
     <header
+      aria-label={headerTitle}
       style={{
         height: 56,
         display: "flex",
@@ -69,7 +71,7 @@ export function PixelHeader({
 
         {/* Navigation */}
         <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          {["Workspace", "Agents", "Projects"].map((item, i) => (
+          {[t.workspace, t.agents, t.projects].map((item, i) => (
             <button
               key={item}
               style={{
@@ -122,7 +124,7 @@ export function PixelHeader({
             cursor: "pointer",
             transition: "all 0.2s",
           }}
-          title={isDark ? "切换到浅色模式" : "切换到暗色模式"}
+          title={isDark ? t.switchToLight : t.switchToDark}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = "rgba(255,255,255,0.08)";
             e.currentTarget.style.color = "#f5f5f7";
@@ -150,7 +152,7 @@ export function PixelHeader({
             cursor: "pointer",
             transition: "all 0.2s",
           }}
-          title="设置"
+          title={t.settings}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = "rgba(255,255,255,0.08)";
             e.currentTarget.style.color = "#f5f5f7";

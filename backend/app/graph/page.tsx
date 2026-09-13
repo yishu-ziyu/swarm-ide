@@ -274,16 +274,16 @@ export default function GraphPage() {
               {t.agentGraph}
             </h1>
             <p style={{ color: "var(--ink-3)", marginBottom: 24, fontSize: 14 }}>
-              可视化智能体之间的协作关系与消息流向
+              {t.graphCardDescription}
             </p>
             <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 32 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--ink-3)" }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#a78bfa" }} />
-                智能体节点
+                {t.agentNodes}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--ink-3)" }}>
                 <div style={{ width: 16, height: 1, background: "rgba(167, 139, 250, 0.3)" }} />
-                消息连接
+                {t.messageConnections}
               </div>
             </div>
           </motion.div>
@@ -418,8 +418,8 @@ export default function GraphPage() {
           gap: 12,
           marginBottom: 24,
         }}>
-          <StatCard icon={GitBranch} label={t.groups || "Groups"} value={stats.totalEdges} color="#a78bfa" delay={0.1} />
-          <StatCard icon={Activity} label={t.noMessagesYet || "Messages"} value={stats.totalMessages} color="#34d399" delay={0.2} />
+          <StatCard icon={GitBranch} label={t.edges} value={stats.totalEdges} color="#a78bfa" delay={0.1} />
+          <StatCard icon={Activity} label={t.messages} value={stats.totalMessages} color="#34d399" delay={0.2} />
         </div>
 
         {/* Edges List */}
@@ -443,7 +443,7 @@ export default function GraphPage() {
           }}>
             <Activity size={14} color="#86868b" />
             <span style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)" }}>
-              {t.recent || "Recent Activity"}
+              {t.recentActivity}
             </span>
             <span style={{
               marginLeft: "auto",
@@ -451,7 +451,7 @@ export default function GraphPage() {
               color: "var(--ink-3)",
               fontFamily: "'JetBrains Mono', monospace",
             }}>
-              {edges.length} connections
+              {edges.length} {t.connections}
             </span>
           </div>
           <div style={{ padding: 16, maxHeight: 600, overflow: "auto" }}>
@@ -469,7 +469,7 @@ export default function GraphPage() {
                 >
                   <Share2 size={20} style={{ margin: "0 auto 12px", opacity: 0.3 }} />
                   <p>{t.noMessagesYet}</p>
-                  <p style={{ fontSize: 12, marginTop: 4 }}>智能体之间的消息将显示在这里</p>
+                  <p style={{ fontSize: 12, marginTop: 4 }}>{t.messagesWillAppearHere}</p>
                 </motion.div>
               </div>
             ) : (

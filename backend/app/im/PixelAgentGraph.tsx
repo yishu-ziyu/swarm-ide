@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Plus, Minus, RotateCcw, Bot, User } from "lucide-react";
+import { useLanguage } from "../_components/LanguageContext";
 
 type AgentNode = {
   id: string;
@@ -29,6 +30,8 @@ export function PixelAgentGraph({
   onAgentClick,
   selectedAgentId,
 }: PixelAgentGraphProps) {
+  const { t } = useLanguage();
+
   return (
     <div style={{
       display: "flex",
@@ -55,7 +58,7 @@ export function PixelAgentGraph({
           color: "var(--ink)",
           textTransform: "uppercase",
         }}>
-          Agent Network
+          {t.agentNetwork}
         </h3>
         <div style={{ display: "flex", gap: 8 }}>
           <button style={{
@@ -141,10 +144,10 @@ export function PixelAgentGraph({
                   <Bot size={20} color="#a78bfa" />
                 </div>
                 <p style={{ fontSize: 14, color: "var(--ink-3)", fontWeight: 500 }}>
-                  No agents yet
+                  {t.noAgents}
                 </p>
                 <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4, fontFamily: '"JetBrains Mono", monospace' }}>
-                  Deploy your first agent
+                  {t.deployFirstAgent}
                 </p>
               </div>
             </div>
@@ -285,10 +288,10 @@ export function PixelAgentGraph({
         alignItems: "center",
       }}>
         <span style={{ fontSize: 12, color: "var(--ink-3)", fontFamily: '"JetBrains Mono", monospace' }}>
-          {agents.length} agents
+          {agents.length} {t.agentCount}
         </span>
         <span style={{ fontSize: 12, color: "var(--ink-3)", fontFamily: '"JetBrains Mono", monospace' }}>
-          {agents.filter(a => a.status !== "offline").length} active
+          {agents.filter(a => a.status !== "offline").length} {t.active}
         </span>
       </div>
     </div>

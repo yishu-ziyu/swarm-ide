@@ -118,7 +118,7 @@ function FeatureCard({
   color: string;
   delay: number;
 }) {
-  const { theme } = useLanguage();
+  const { theme, t } = useLanguage();
   const isDark = theme === "dark";
 
   return (
@@ -199,7 +199,7 @@ function FeatureCard({
             fontWeight: 500,
             color,
           }}>
-            进入
+            {t.enter}
             <ChevronRight size={14} />
           </div>
         </motion.div>
@@ -215,7 +215,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   const typedTitle = useTypingEffect("Swarm IDE", 120, 500);
-  const typedSubtitle = useTypingEffect("Multi-Agent Orchestration Interface", 40, 1200);
+  const typedSubtitle = useTypingEffect(t.mvpUI, 40, 1200);
 
   useEffect(() => {
     async function fetchWorkspaces() {
@@ -280,7 +280,7 @@ export default function HomePage() {
             }}
           >
             <Terminal size={14} />
-            <span>v2.0.0 — Ready for orchestration</span>
+            <span>v2.0.0 — {t.readyForOrchestration}</span>
           </motion.div>
 
           {/* Main Title with typing effect */}
@@ -319,7 +319,7 @@ export default function HomePage() {
             }}
           >
             {typedSubtitle}
-            {typedSubtitle.length < "Multi-Agent Orchestration Interface".length && (
+            {typedSubtitle.length < t.mvpUI.length && (
               <span className="terminal-cursor" style={{ background: accentColor }} />
             )}
           </motion.p>
@@ -338,9 +338,9 @@ export default function HomePage() {
             }}
           >
             {[
-              { icon: Cpu, label: "智能体", value: "∞" },
-              { icon: Zap, label: "并发", value: "16x" },
-              { icon: MessageSquare, label: "消息", value: "实时" },
+              { icon: Cpu, label: t.agents, value: "∞" },
+              { icon: Zap, label: t.concurrency, value: "16x" },
+              { icon: MessageSquare, label: t.messages, value: t.realtime },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} style={{
                 display: "flex",
@@ -392,16 +392,16 @@ export default function HomePage() {
           <FeatureCard
             href="/im"
             icon={MessageSquare}
-            title={t.openIM || "智能对话"}
-            description="与多个 AI 智能体实时协作，支持流式输出与工具调用"
+            title={t.openIM}
+            description={t.imCardDescription}
             color="var(--landing-accent)"
             delay={2.2}
           />
           <FeatureCard
             href="/graph"
             icon={Network}
-            title={t.openGraph || "关系图谱"}
-            description="可视化智能体之间的协作关系与消息流向"
+            title={t.openGraph}
+            description={t.graphCardDescription}
             color="var(--landing-accent-green)"
             delay={2.4}
           />
