@@ -303,6 +303,89 @@
   color-scheme: dark;
 }
 
+/* ==================== LANDING PAGE THEME SYSTEM ==================== */
+/* Light values are the :root default; dark values are overridden below.
+   Dark values are locked to the landing page's former hard-coded literals
+   (zero visual regression); light values mirror the apple theme palette. */
+:root {
+  --landing-bg: #f5f5f7;
+  --landing-text: #1d1d1f;
+  --landing-text-secondary: #86868b;
+  --landing-text-muted: #a1a1aa;
+  --landing-border: #e5e5e7;
+  --landing-accent: #7c3aed;
+  --landing-accent-green: #10b981;
+
+  --landing-hero-from: #f5f5f7;
+  --landing-hero-mid: #ede9fe;
+  --landing-hero-to: #f5f5f7;
+
+  --landing-glass-strong: rgba(255, 255, 255, 0.72);
+  --landing-glass: rgba(255, 255, 255, 0.6);
+  --landing-glass-subtle: rgba(255, 255, 255, 0.5);
+  --landing-glass-hover: rgba(255, 255, 255, 0.85);
+  --landing-surface-border: rgba(0, 0, 0, 0.08);
+
+  --landing-chip-bg: rgba(0, 0, 0, 0.03);
+  --landing-chip-border: rgba(0, 0, 0, 0.06);
+
+  --landing-accent-tint: rgba(124, 58, 237, 0.08);
+  --landing-accent-border: rgba(124, 58, 237, 0.2);
+  --landing-accent-border-soft: rgba(124, 58, 237, 0.15);
+  --landing-accent-border-strong: rgba(124, 58, 237, 0.25);
+
+  --landing-particle: rgba(124, 58, 237, 0.25);
+  --landing-grid: rgba(124, 58, 237, 0.35);
+
+  --landing-shadow-hover: rgba(0, 0, 0, 0.12);
+
+  --landing-error: #ef4444;
+  --landing-error-bg: rgba(239, 68, 68, 0.08);
+  --landing-error-border: rgba(239, 68, 68, 0.2);
+
+  color-scheme: light;
+}
+
+[data-theme="dark"],
+.dark {
+  --landing-bg: #0d0d0d;
+  --landing-text: #f5f5f7;
+  --landing-text-secondary: #86868b;
+  --landing-text-muted: #6b6b6b;
+  --landing-border: #2a2a2a;
+  --landing-accent: #a78bfa;
+  --landing-accent-green: #34d399;
+
+  --landing-hero-from: #0d0d0d;
+  --landing-hero-mid: #1a0b2e;
+  --landing-hero-to: #0d0d0d;
+
+  --landing-glass-strong: rgba(26, 26, 26, 0.6);
+  --landing-glass: rgba(26, 26, 26, 0.5);
+  --landing-glass-subtle: rgba(26, 26, 26, 0.4);
+  --landing-glass-hover: rgba(26, 26, 26, 0.8);
+  --landing-surface-border: rgba(255, 255, 255, 0.08);
+
+  --landing-chip-bg: rgba(255, 255, 255, 0.03);
+  --landing-chip-border: rgba(255, 255, 255, 0.06);
+
+  --landing-accent-tint: rgba(124, 58, 237, 0.1);
+  --landing-accent-border: rgba(124, 58, 237, 0.2);
+  --landing-accent-border-soft: rgba(124, 58, 237, 0.15);
+  --landing-accent-border-strong: rgba(124, 58, 237, 0.3);
+
+  --landing-particle: rgba(124, 58, 237, 0.4);
+  --landing-grid: rgba(124, 58, 237, 0.5);
+
+  --landing-shadow-hover: rgba(0, 0, 0, 0.3);
+
+  --landing-error: #ef4444;
+  --landing-error-bg: rgba(239, 68, 68, 0.08);
+  --landing-error-border: rgba(239, 68, 68, 0.2);
+
+  color-scheme: dark;
+}
+
 /* ==================== BASE STYLES ==================== */
 html,
 body {

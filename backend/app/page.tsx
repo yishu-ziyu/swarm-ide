@@ -72,7 +72,7 @@ function ParticleBackground() {
               width: `${width.toFixed(5)}px`,
               height: `${height.toFixed(5)}px`,
               borderRadius: "50%",
-              backgroundColor: "rgba(124, 58, 237, 0.4)",
+              backgroundColor: "var(--landing-particle)",
               left: `${left.toFixed(4)}%`,
               top: `${top.toFixed(4)}%`,
             }}
@@ -93,7 +93,7 @@ function ParticleBackground() {
       <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.06 }}>
         <defs>
           <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-            <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(124, 58, 237, 0.5)" strokeWidth="0.5"/>
+            <path d="M 60 0 L 0 0 0 60" fill="none" style={{ stroke: "var(--landing-grid)" }} strokeWidth="0.5"/>
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#grid)" />
@@ -118,6 +118,9 @@ function FeatureCard({
   color: string;
   delay: number;
 }) {
+  const { theme } = useLanguage();
+  const isDark = theme === "dark";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -127,10 +130,10 @@ function FeatureCard({
       <Link href={href} style={{ textDecoration: "none" }}>
         <motion.div
           style={{
-            background: "rgba(26, 26, 26, 0.6)",
+            background: "var(--landing-glass-strong)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            border: "1px solid var(--landing-surface-border)",
             borderRadius: 20,
             padding: 32,
             cursor: "pointer",
@@ -139,7 +142,9 @@ function FeatureCard({
           }}
           whileHover={{
             y: -4,
-            boxShadow: `0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px ${color}20`,
+            boxShadow: isDark
+              ? `0 20px 40px var(--landing-shadow-hover), 0 0 30px color-mix(in srgb, ${color} 12.55%, transparent)`
+              : `0 20px 40px var(--landing-shadow-hover), 0 0 30px color-mix(in srgb, ${color} 20%, transparent)`,
           }}
           whileTap={{ scale: 0.98 }}
           transition={{ duration: 0.3 }}
@@ -160,19 +165,19 @@ function FeatureCard({
             width: 48,
             height: 48,
             borderRadius: 14,
-            background: `${color}15`,
+            background: `color-mix(in srgb, ${color} 8.24%, transparent)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             marginBottom: 20,
-            border: `1px solid ${color}20`,
+            border: `1px solid color-mix(in srgb, ${color} 12.55%, transparent)`,
           }}>
             <Icon size={24} color={color} />
           </div>
           <div style={{
             fontSize: 18,
             fontWeight: 600,
-            color: "#f5f5f7",
+            color: "var(--landing-text)",
             marginBottom: 8,
             letterSpacing: "-0.01em",
           }}>
@@ -180,7 +185,7 @@ function FeatureCard({
           </div>
           <div style={{
             fontSize: 14,
-            color: "#86868b",
+            color: "var(--landing-text-secondary)",
             lineHeight: 1.5,
             marginBottom: 16,
           }}>
@@ -229,18 +234,19 @@ export default function HomePage() {
   }, []);
 
   const isDark = theme === "dark";
-  const bgColor = "#0d0d0d";
-  const textPrimary = "#f5f5f7";
-  const textSecondary = "#86868b";
-  const textMuted = "#6b6b6b";
-  const borderColor = "#2a2a2a";
-  const accentColor = "#a78bfa";
+  const bgColor = "var(--landing-bg)";
+  const textPrimary = "var(--landing-text)";
+  const textSecondary = "var(--landing-text-secondary)";
+  const textMuted = "var(--landing-text-muted)";
+  const borderColor = "var(--landing-border)";
+  const accentColor = "var(--landing-accent)";
 
   return (
     <div style={{
       minHeight: "100vh",
       background: bgColor,
       color: textPrimary,
+      colorScheme: isDark ? "dark" : "light",
       fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
     }}>
       {/* Hero Section */}
@@ -249,7 +255,7 @@ export default function HomePage() {
         padding: "80px 24px 60px",
         textAlign: "center",
         overflow: "hidden",
-        background: "linear-gradient(180deg, #0d0d0d 0%, #1a0b2e 40%, #0d0d0d 100%)",
+        background: "linear-gradient(180deg, var(--landing-hero-from) 0%, var(--landing-hero-mid) 40%, var(--landing-hero-to) 100%)",
       }}>
         <ParticleBackground />
 
@@ -265,8 +271,8 @@ export default function HomePage() {
               gap: 8,
               padding: "8px 16px",
               borderRadius: 100,
-              background: "rgba(124, 58, 237, 0.1)",
-              border: "1px solid rgba(124, 58, 237, 0.2)",
+              background: "var(--landing-accent-tint)",
+              border: "1px solid var(--landing-accent-border)",
               marginBottom: 32,
               fontSize: 13,
               color: accentColor,
@@ -342,8 +348,8 @@ export default function HomePage() {
                 gap: 10,
                 padding: "10px 20px",
                 borderRadius: 12,
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.06)",
+                background: "var(--landing-chip-bg)",
+                border: "1px solid var(--landing-chip-border)",
               }}>
                 <Icon size={16} color={accentColor} />
                 <span style={{ fontSize: 13, color: textMuted }}>{label}</span>
@@ -388,7 +394,7 @@ export default function HomePage() {
             icon={MessageSquare}
             title={t.openIM || "智能对话"}
             description="与多个 AI 智能体实时协作，支持流式输出与工具调用"
-            color="#a78bfa"
+            color="var(--landing-accent)"
             delay={2.2}
           />
           <FeatureCard
@@ -396,7 +402,7 @@ export default function HomePage() {
             icon={Network}
             title={t.openGraph || "关系图谱"}
             description="可视化智能体之间的协作关系与消息流向"
-            color="#34d399"
+            color="var(--landing-accent-green)"
             delay={2.4}
           />
         </div>
@@ -408,17 +414,17 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 2.6 }}
             style={{
-              background: "rgba(239, 68, 68, 0.08)",
-              border: "1px solid rgba(239, 68, 68, 0.2)",
+              background: "var(--landing-error-bg)",
+              border: "1px solid var(--landing-error-border)",
               padding: 24,
               marginBottom: 32,
               borderRadius: 16,
             }}
           >
-            <div style={{ fontWeight: 600, marginBottom: 8, color: "#ef4444", fontSize: 14 }}>
+            <div style={{ fontWeight: 600, marginBottom: 8, color: "var(--landing-error)", fontSize: 14 }}>
               {t.databaseNotReady}
             </div>
-            <div style={{ whiteSpace: "pre-wrap", fontSize: 13, color: "#ef4444", fontFamily: '"JetBrains Mono", monospace' }}>
+            <div style={{ whiteSpace: "pre-wrap", fontSize: 13, color: "var(--landing-error)", fontFamily: '"JetBrains Mono", monospace' }}>
               {dbError}
             </div>
           </motion.div>
@@ -429,7 +435,7 @@ export default function HomePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 2.6 }}
           style={{
-            background: "rgba(26, 26, 26, 0.6)",
+            background: "var(--landing-glass-strong)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: `1px solid ${borderColor}`,
@@ -469,7 +475,7 @@ export default function HomePage() {
             </div>
           ) : workspaces.length === 0 ? (
             <div style={{
-              background: "rgba(26, 26, 26, 0.4)",
+              background: "var(--landing-glass-subtle)",
               border: `1px solid ${borderColor}`,
               borderRadius: 16,
               padding: 48,
@@ -495,15 +501,15 @@ export default function HomePage() {
                   <Link href={`/im?workspaceId=${encodeURIComponent(w.id)}`} style={{ textDecoration: "none" }}>
                     <motion.div
                       style={{
-                        background: "rgba(26, 26, 26, 0.5)",
+                        background: "var(--landing-glass)",
                         border: `1px solid ${borderColor}`,
                         borderRadius: 14,
                         padding: 18,
                         cursor: "pointer",
                       }}
                       whileHover={{
-                        background: "rgba(26, 26, 26, 0.8)",
-                        borderColor: "rgba(124, 58, 237, 0.3)",
+                        background: "var(--landing-glass-hover)",
+                        borderColor: "var(--landing-accent-border-strong)",
                         y: -2,
                       }}
                       transition={{ duration: 0.2 }}
@@ -518,11 +524,11 @@ export default function HomePage() {
                           width: 36,
                           height: 36,
                           borderRadius: 10,
-                          background: "rgba(124, 58, 237, 0.1)",
+                          background: "var(--landing-accent-tint)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          border: "1px solid rgba(124, 58, 237, 0.15)",
+                          border: "1px solid var(--landing-accent-border-soft)",
                         }}>
                           <MessageSquare size={16} color={accentColor} />
                         </div>
@@ -558,7 +564,7 @@ export default function HomePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 3.2 }}
           style={{
-            background: "rgba(26, 26, 26, 0.4)",
+            background: "var(--landing-glass-subtle)",
             border: `1px solid ${borderColor}`,
             borderRadius: 20,
             padding: 24,
