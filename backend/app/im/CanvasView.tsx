@@ -169,7 +169,7 @@ function MiniMap({
 
   return (
     <div
-      className="absolute bottom-4 right-4 w-[180px] h-[120px] bg-[var(--ui-canvas-deep)] border border-[var(--ui-canvas-border)] rounded-lg overflow-hidden cursor-pointer"
+      className="absolute bottom-4 right-4 w-[180px] h-[120px] bg-[var(--ui-canvas-deep-90)] border border-[var(--ui-canvas-border)] rounded-lg overflow-hidden cursor-pointer"
       onClick={handleMiniMapClick}
     >
       {/* Nodes on minimap */}

@@ -403,7 +403,7 @@ export default function GraphPage() {
               borderRadius: 16,
               padding: 16,
               marginBottom: 24,
-              color: "var(--ui-error)",
+              color: "var(--ui-error-ink)",
               fontSize: 13,
             }}
           >

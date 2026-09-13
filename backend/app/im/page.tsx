@@ -2074,7 +2074,7 @@ function IMPageInner() {
                                 style={{
                                   fontSize: 12,
                                   fontWeight: 700,
-                                  color: beam.kind === "create" ? "var(--ui-canvas-beam-create-ink)" : "var(--ui-canvas-ink)",
+                                  color: beam.kind === "create" ? "var(--ui-canvas-beam-create-ink)" : "var(--ui-canvas-ink-alt)",
                                   border: `1px solid ${beam.kind === "create" ? "var(--ui-canvas-beam-create-border)" : "var(--ui-canvas-beam-border)"}`,
                                   background:
                                     beam.kind === "create"
@@ -2316,7 +2316,7 @@ function IMPageInner() {
           />
           {isSettingsOpen && (
             <div className="modal-overlay" style={{ position: "fixed", inset: 0, background: "var(--ui-overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
-              <div className="card" style={{ width: 460, maxWidth: "100%", background: "var(--ui-surface)", padding: 24, borderRadius: 8 }}>
+              <div className="card" style={{ width: 460, maxWidth: "100%", background: "var(--ui-surface-2)", padding: 24, borderRadius: 8 }}>
                 <div style={{ fontWeight: 700, fontSize: 24, marginBottom: 16 }}>{t.llmProviderSettings}</div>
                 <div style={{ marginBottom: 12 }}>
                   <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.provider}</label>
