@@ -18,3 +18,5 @@ dist/
 backend/.agent_logs/
 backend/.agent_llm_requests/
 backend/.agent_stream_logs/
+global_state.txt
+.dev/

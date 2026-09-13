@@ -54,6 +54,16 @@ function cleanEnv(env: NodeJS.ProcessEnv): Record<string, string> {
   return out;
 }
 
+// mcp.json 中的 env 值支持 "${ENV_VAR}" 形式引用进程环境变量（密钥不出库）。
+function resolveEnv(env: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(env)) {
+    const match = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/.exec(value.trim());
+    out[key] = match ? (process.env[match[1]] ?? "") : value;
+  }
+  return out;
+}
+
 async function resolveMcpConfigPath(): Promise<string | null> {
   const envPath = process.env.MCP_CONFIG_PATH;
   if (envPath) {
@@ -264,7 +274,7 @@ class McpRegistry {
       const transport = new StdioClientTransport({
         command: server.command,
         args: server.args ?? [],
-        env: { ...cleanEnv(process.env), ...(server.env ?? {}) },
+        env: { ...cleanEnv(process.env), ...resolveEnv(server.env ?? {}) },
       });
       await client.connect(transport, { timeout });
       return client;

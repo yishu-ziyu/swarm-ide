@@ -1,95 +1,153 @@
 import { z } from "zod";
 import { buildTool, successResult, type ToolCallOptions } from "../Tool";
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
-
-const execAsync = promisify(exec);
+import { getMcpRegistry } from "../../../runtime/mcp";
+import {
+  recordSearchCitations,
+  type WebSearchResult,
+} from "../../../research/citation-store";
 
 // ============================================================================
-// Search Tool (grep)
+// Search Tool (web / academic search via MCP, e.g. Tavily)
 // ============================================================================
 
 const SearchToolSchema = z.object({
-  pattern: z.string().describe("Regex pattern to search for"),
-  paths: z.array(z.string()).describe("Files or directories to search"),
-  caseSensitive: z.boolean().default(false).describe("Case sensitive search"),
-  matchesOnly: z.boolean().default(true).describe("Show only match lines"),
-  lineNumbers: z.boolean().default(true).describe("Show line numbers"),
-  maxMatches: z.number().default(100).describe("Maximum number of matches"),
-  include: z.string().optional().describe("File glob pattern to include"),
-  exclude: z.string().optional().describe("File glob pattern to exclude"),
+  query: z
+    .string()
+    .min(1)
+    .describe(
+      "Search query. Natural language or keywords; can be used to find academic papers, references, or web pages."
+    ),
+  maxResults: z
+    .number()
+    .int()
+    .min(1)
+    .max(20)
+    .default(8)
+    .describe("Maximum number of results to return (default 8)"),
+  topic: z
+    .enum(["general", "news"])
+    .default("general")
+    .describe("'general' for literature/web search, 'news' for recent events"),
 });
 
 export type SearchToolInput = z.infer<typeof SearchToolSchema>;
 
+/** 在 MCP registry 里定位 tavily 的搜索工具（tavily-mcp 暴露名为 tavily-search）。 */
+async function resolveTavilySearchTool(
+  registry: Awaited<ReturnType<typeof getMcpRegistry>>
+): Promise<string | null> {
+  const preferred = "tavily-search";
+  if (registry.hasTool(preferred)) return preferred;
+
+  const definitions = registry.getToolDefinitions();
+  const candidate = definitions.find((def) => {
+    const name = def.function.name.toLowerCase();
+    return name.includes("tavily") && name.includes("search");
+  });
+  return candidate?.function.name ?? null;
+}
+
+type RawHit = { title?: unknown; url?: unknown; content?: unknown; snippet?: unknown };
+
+/** 从 MCP 工具返回的文本中解析出 {title,url,snippet}[]。 */
+function parseSearchResults(content: string): WebSearchResult[] {
+  const text = (content ?? "").trim();
+  if (!text) return [];
+
+  // tavily-mcp 返回 JSON 数组或 {results: [...]}，也可能夹在普通文本里
+  const jsonCandidates: string[] = [text];
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenced?.[1]) jsonCandidates.push(fenced[1].trim());
+  const firstBracket = text.indexOf("[");
+  const lastBracket = text.lastIndexOf("]");
+  if (firstBracket !== -1 && lastBracket > firstBracket) {
+    jsonCandidates.push(text.slice(firstBracket, lastBracket + 1));
+  }
+
+  for (const candidate of jsonCandidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+      const hits: RawHit[] = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.results)
+          ? parsed.results
+          : [];
+      const mapped = hits
+        .map((hit) => ({
+          title: typeof hit?.title === "string" ? hit.title : "",
+          url: typeof hit?.url === "string" ? hit.url : "",
+          snippet:
+            typeof hit?.content === "string"
+              ? hit.content
+              : typeof hit?.snippet === "string"
+                ? hit.snippet
+                : "",
+        }))
+        .filter((item) => item.url);
+      if (mapped.length > 0) return mapped;
+    } catch {
+      // try next candidate
+    }
+  }
+
+  // 兜底：从纯文本中抽取 URL
+  const urls = Array.from(new Set(text.match(/https?:\/\/[^\s"'<>)]+/g) ?? []));
+  return urls.map((url) => ({ title: url, url, snippet: "" }));
+}
+
 const SearchToolDef = buildTool({
-  name: "Search",
-  description: "Search for a pattern in files using regex.",
+  name: "web_search",
+  description:
+    "Search the web (Tavily via MCP) for pages and academic literature. Use whenever the user asks to research a topic, find papers/references, or needs up-to-date web information. Returns structured results [{title, url, snippet}] and records each result as a citation.",
   inputSchema: SearchToolSchema,
   outputSchema: z.any(),
   isReadOnly: () => true,
+  isConcurrencySafe: () => true,
 
   async call(
     input: SearchToolInput,
-    _options: ToolCallOptions
+    options: ToolCallOptions
   ): Promise<{ success: boolean; data?: any; error?: string }> {
-    const {
-      pattern,
-      paths,
-      caseSensitive = false,
-      matchesOnly = true,
-      maxMatches = 100,
-      include,
-      exclude,
-    } = input;
+    const { query, maxResults, topic } = input;
 
     try {
-      const args = [
-        "-n",
-        ...(caseSensitive ? [] : ["-i"]),
-        ...(matchesOnly ? ["-o"] : ["-n"]),
-        "--max-count", maxMatches.toString(),
-      ];
-
-      if (include) {
-        args.push("--include", include);
-      }
-      if (exclude) {
-        args.push("--exclude", exclude);
+      const registry = await getMcpRegistry();
+      const toolName = await resolveTavilySearchTool(registry);
+      if (!toolName) {
+        return {
+          success: false,
+          error:
+            "No tavily search tool available via MCP. Ensure backend/mcp.json has the tavily server enabled (disabled:false) and TAVILY_API_KEY set.",
+        };
       }
 
-      args.push("-E", pattern);
-      args.push(...paths);
-
-      const { stdout, stderr } = await execAsync(`grep ${args.join(" ")}`, {
-        maxBuffer: 10 * 1024 * 1024,
+      const callResult = await registry.callTool(toolName, {
+        query,
+        max_results: maxResults,
+        topic,
+        include_answer: false,
       });
+      if (!callResult.ok) {
+        return { success: false, error: callResult.error ?? "MCP tavily search failed" };
+      }
 
-      const matches = stdout
-        .trim()
-        .split("\n")
-        .filter((line) => line.trim())
-        .map((line) => {
-          const colonIdx = line.indexOf(":");
-          if (colonIdx === -1) return { line: "", text: line };
-          return {
-            line: line.slice(0, colonIdx),
-            text: line.slice(colonIdx + 1),
-          };
-        });
+      const results = parseSearchResults(callResult.content ?? "").slice(0, maxResults);
+      const agentId = options?.context?.agentId || "anonymous";
+      const citations = recordSearchCitations(agentId, query, results);
 
       return successResult({
-        pattern,
-        matches,
-        totalMatches: matches.length,
-        paths,
+        query,
+        results,
+        totalResults: results.length,
+        citationsRecorded: citations.length,
+        citationIds: citations.map((citation) => citation.id),
+        source: toolName,
       });
-
-    } catch (err: any) {
-      if (err.exitCode === 1) {
-        return successResult({ pattern, matches: [], totalMatches: 0, paths });
-      }
-      return successResult({ pattern, matches: [], totalMatches: 0, paths, error: err.stderr || err.message });
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
     }
   },
 });

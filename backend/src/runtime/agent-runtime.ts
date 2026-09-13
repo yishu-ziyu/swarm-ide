@@ -11,6 +11,7 @@ import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import path from "node:path";
 import { getConfig } from "@/lib/config";
+import { SearchTool } from "@/lib/tools/builtInTools/SearchTool";
 
 async function* parseSSEJsonLines(body: ReadableStream<Uint8Array>): AsyncGenerator<Record<string, unknown>> {
   const reader = body.getReader();
@@ -285,6 +286,35 @@ const AGENT_TOOLS = [
           maxOutputKB: { type: "number", description: "Maximum combined output size in KB (default 1024)" },
         },
         required: ["command"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "web_search",
+      description:
+        "Search the web / academic literature via Tavily (MCP). Use when the user asks to research a topic, find papers or references, or needs up-to-date web information. Returns structured results [{title, url, snippet}]; each result is recorded as a citation retrievable via GET /api/research/citations?agentId=...",
+      parameters: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          query: {
+            type: "string",
+            description:
+              "Search query (natural language or keywords; may include paper title, author, or DOI)",
+          },
+          maxResults: {
+            type: "number",
+            description: "Maximum number of results to return (default 8, max 20)",
+          },
+          topic: {
+            type: "string",
+            enum: ["general", "news"],
+            description: "'general' for literature/web search, 'news' for recent events",
+          },
+        },
+        required: ["query"],
       },
     },
   },
@@ -721,6 +751,40 @@ class AgentRunner {
 
       emitToolDone(true);
       return { ok: true, content: formatSkillPrompt(skill) };
+    }
+
+    if (name === "web_search") {
+      const args = safeJsonParse<{ query?: string; maxResults?: number; topic?: string }>(
+        input.call.argumentsText,
+        {}
+      );
+      const query = (args.query ?? "").trim();
+      if (!query) {
+        emitToolDone(false);
+        return { ok: false, error: "Missing query" };
+      }
+
+      const result = await SearchTool.call(
+        {
+          query,
+          maxResults: Number(args.maxResults) > 0 ? Number(args.maxResults) : 8,
+          topic: args.topic === "news" ? "news" : "general",
+        },
+        {
+          context: {
+            workspaceId,
+            agentId: this.agentId,
+            messages: [],
+          },
+          canUseTool: () => true,
+        }
+      );
+
+      emitToolDone(result.success);
+      if (!result.success) {
+        return { ok: false, error: result.error ?? "web_search failed" };
+      }
+      return { ok: true, ...(result.data as Record<string, unknown>) };
     }
 
     if (name === "bash") {

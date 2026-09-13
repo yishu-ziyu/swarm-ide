@@ -6,14 +6,16 @@
  * content extraction, citation management, and report synthesis.
  */
 
-import { AgentRuntime, UUID } from "../runtime/agent-runtime";
+import { AgentRuntime } from "../runtime/agent-runtime";
+
+type UUID = string;
 
 type ResearchMessage = {
   role: "system" | "user" | "assistant";
   content: string;
 };
 
-type SearchResult = {
+export type SearchResult = {
   url: string;
   title: string;
   content: string;
@@ -21,7 +23,7 @@ type SearchResult = {
   source?: string;
 };
 
-type Citation = {
+export type Citation = {
   id: string;
   type: "journal" | "conference" | "web" | "book";
   authors: string[];
@@ -30,9 +32,15 @@ type Citation = {
   url?: string;
   journal?: string;
   doi?: string;
+  /** 搜索结果摘要（web 搜索落库时填充） */
+  snippet?: string;
+  /** 产生该引文的搜索查询词 */
+  query?: string;
+  /** 引文落库时间（ISO 8601） */
+  searchedAt?: string;
 };
 
-type ResearchReport = {
+export type ResearchReport = {
   topic: string;
   abstract: string;
   sections: Array<{

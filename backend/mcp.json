@@ -10,7 +10,7 @@
             "env": {
                 "TAVILY_API_KEY": "${TAVILY_API_KEY}"
             },
-            "disabled": true
+            "disabled": false
         },
         "exa": {
             "type": "stdio",
