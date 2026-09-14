@@ -69,41 +69,19 @@ export function PixelHeader({
           </span>
         </motion.div>
 
-        {/* Navigation */}
         <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          {[t.workspace, t.agents, t.projects].map((item, i) => (
-            <button
-              key={item}
-              style={{
-                padding: "6px 14px",
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 500,
-                color: i === 0 ? "var(--ui-accent)" : "var(--ui-muted)",
-                background: i === 0 ? "var(--ui-accent-tint-4)" : "transparent",
-                border: "none",
-                cursor: "pointer",
-                transition: "all 0.2s",
-                fontFamily: "'JetBrains Mono', monospace",
-                textTransform: "uppercase",
-                letterSpacing: "0.03em",
-              }}
-              onMouseEnter={(e) => {
-                if (i !== 0) {
-                  e.currentTarget.style.color = "var(--ink)";
-                  e.currentTarget.style.background = "var(--ui-fill)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (i !== 0) {
-                  e.currentTarget.style.color = "var(--ui-muted)";
-                  e.currentTarget.style.background = "transparent";
-                }
-              }}
-            >
-              {item}
-            </button>
-          ))}
+          <span
+            style={{
+              padding: "6px 14px",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 500,
+              color: "var(--ink)",
+              background: "var(--ui-fill-2)",
+            }}
+          >
+            {t.workspace}
+          </span>
         </nav>
       </div>
 

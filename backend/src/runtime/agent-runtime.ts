@@ -7,11 +7,16 @@ import { getWorkspaceUIBus } from "./ui-bus";
 import { getMcpRegistry } from "./mcp";
 import { appendAgentHistorySnapshot, appendAgentLlmRequestRaw, appendAgentStreamEvent } from "./agent-logger";
 import { formatSkillPrompt, getSkillLoader } from "./skill-loader";
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
-import path from "node:path";
-import { getConfig } from "@/lib/config";
-import { SearchTool } from "@/lib/tools/builtInTools/SearchTool";
+import { getConfig, isHostBashAllowed } from "@/lib/config";
+import { didSendSucceed } from "./delivery";
+import { builtinToolHandlers } from "./builtin-tools";
+import { processingStore } from "./processing-store";
+import { formatResearchContext, researchStore } from "../research/research-store";
+import {
+  groupSendAllowed,
+  peerMessageAllowed,
+  type ParticipantRole,
+} from "../research/protocol";
 
 async function* parseSSEJsonLines(body: ReadableStream<Uint8Array>): AsyncGenerator<Record<string, unknown>> {
   const reader = body.getReader();
@@ -70,7 +75,6 @@ type ToolCall = {
 };
 
 const SKILLS_MARKER = "[skills:loaded]";
-const SEND_TOOL_NAMES = new Set(["send", "send_group_message", "send_direct_message"]);
 
 async function buildSkillsBlock(): Promise<string> {
   try {
@@ -114,18 +118,34 @@ const AGENT_TOOLS = [
     function: {
       name: "create",
       description:
-        "Create a sub-agent with the given role for delegation. Returns {agentId}.",
+        "Create a sub-agent. In research mode this is orchestrator-worker: researchers need objective, outputFormat, sources, and boundaries so they do not duplicate search. Use role=reviewer or role=citation for the later phases.",
       parameters: {
         type: "object",
         additionalProperties: false,
         properties: {
           role: {
             type: "string",
-            description: "Role name for the new agent, e.g. coder/researcher/reviewer",
+            description: "Role name, e.g. researcher/reviewer/citation",
           },
           guidance: {
             type: "string",
             description: "Extra system guidance to seed the new agent.",
+          },
+          objective: {
+            type: "string",
+            description: "Research workers: the exact question this worker owns.",
+          },
+          outputFormat: {
+            type: "string",
+            description: "Research workers: required output shape, e.g. claims with evidenceIds.",
+          },
+          sources: {
+            type: "string",
+            description: "Research workers: allowed sources, e.g. peer-reviewed only.",
+          },
+          boundaries: {
+            type: "string",
+            description: "Research workers: what not to do, e.g. no news, no overlapping queries.",
           },
         },
         required: ["role"],
@@ -292,9 +312,36 @@ const AGENT_TOOLS = [
   {
     type: "function",
     function: {
+      name: "search_papers",
+      description:
+        "Search academic papers via Semantic Scholar. Default literature tool. Returns authors, year, abstract excerpt, URL, and evidence IDs. Use this for papers, methods, and citations. Do not use web_search for papers.",
+      parameters: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          query: {
+            type: "string",
+            description: "Paper title, authors, methods, or research question.",
+          },
+          maxResults: {
+            type: "number",
+            description: "Maximum papers to return (default 8, max 20)",
+          },
+          yearFrom: {
+            type: "number",
+            description: "Only papers published this year or later",
+          },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "web_search",
       description:
-        "Search the web / academic literature via Tavily (MCP). Use when the user asks to research a topic, find papers or references, or needs up-to-date web information. Returns structured results [{title, url, snippet}]; each result is recorded as a citation retrievable via GET /api/research/citations?agentId=...",
+        "Search the open web via Tavily (MCP). For news and non-academic pages only. For papers, use search_papers.",
       parameters: {
         type: "object",
         additionalProperties: false,
@@ -318,6 +365,122 @@ const AGENT_TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "record_claim",
+      description:
+        "Record a research conclusion and attach evidence IDs from search_papers (preferred) or web_search. Claims without evidence stay unverified and cannot enter the final report.",
+      parameters: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          statement: { type: "string", description: "The conclusion in one or two sentences." },
+          evidenceIds: {
+            type: "array",
+            items: { type: "string" },
+            description: "Evidence / citation IDs that support this conclusion.",
+          },
+        },
+        required: ["statement"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_research_board",
+      description:
+        "Read the shared research board: question, phase, claims, evidence, unused excerpts, reviews. During isolate, workers only see their own writes.",
+      parameters: { type: "object", additionalProperties: false, properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "review_claim",
+      description:
+        "Reviewer-only. Post CHALLENGE, ALTERNATIVE, or VERIFIED on a claim. Reviewers should not have searched that claim themselves.",
+      parameters: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          claimId: { type: "string" },
+          verdict: { type: "string", enum: ["CHALLENGE", "ALTERNATIVE", "VERIFIED"] },
+          note: { type: "string", description: "Why, citing evidence IDs when possible." },
+        },
+        required: ["claimId", "verdict", "note"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "align_claim_evidence",
+      description:
+        "Citation phase. Attach evidence IDs (source excerpts) to a claim. Claims with no excerpt stay unverified.",
+      parameters: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          claimId: { type: "string" },
+          evidenceIds: { type: "array", items: { type: "string" } },
+        },
+        required: ["claimId", "evidenceIds"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "advance_research_phase",
+      description:
+        "Lead-only. Move isolate → review → cite → commit. Commit is allowed only after review and citation alignment. Then the lead may message the human.",
+      parameters: { type: "object", additionalProperties: false, properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "fetch_source",
+      description:
+        "Fetch a paper or web page and store an excerpt as evidence. Use after search_papers when you need more text from a specific URL.",
+      parameters: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          url: { type: "string", description: "http(s) URL to fetch" },
+        },
+        required: ["url"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "save_research_note",
+      description:
+        "Save a markdown note into this workspace's research-output folder. Filename must end with .md.",
+      parameters: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          filename: { type: "string" },
+          content: { type: "string" },
+        },
+        required: ["filename", "content"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "export_report",
+      description:
+        "Build the current research report markdown from verified claims, papers, and unused evidence.",
+      parameters: { type: "object", additionalProperties: false, properties: {} },
+    },
+  },
 ] as const;
 
 const BUILTIN_TOOL_NAMES = new Set(AGENT_TOOLS.map((tool) => tool.function.name));
@@ -339,7 +502,9 @@ async function getAgentTools() {
   const mcpTools = mcp.getToolDefinitions();
   cachedTools = [...AGENT_TOOLS, ...mcpTools];
   toolsCacheTime = now;
-  return cachedTools;
+  return isHostBashAllowed()
+    ? cachedTools
+    : cachedTools.filter((tool) => tool.function.name !== "bash");
 }
 
 // 主动刷新工具缓存（当MCP配置变更时调用）
@@ -408,6 +573,7 @@ class AgentRunner {
   private running = false;
   private stopped = false;
   private interruptRequested = false;
+  private workAbort: AbortController | null = null;
 
   constructor(
     private readonly agentId: UUID,
@@ -457,6 +623,7 @@ class AgentRunner {
 
   requestInterrupt() {
     this.interruptRequested = true;
+    this.workAbort?.abort();
     this.wake.resolve();
     this.wake = createDeferred<void>();
   }
@@ -475,21 +642,27 @@ class AgentRunner {
       if (this.stopped) return;
       if (this.running) continue;
       this.running = true;
+      this.workAbort = new AbortController();
       try {
         await this.processUntilIdle();
       } catch (err) {
-        this.bus.emit(this.agentId, {
-          event: "agent.error",
-          data: { message: err instanceof Error ? err.message : String(err) },
-        });
-        const message = err instanceof Error ? err.message : String(err);
-        void appendAgentStreamEvent({
-          agentId: this.agentId,
-          kind: "error",
-          error: message,
-        });
+        const aborted =
+          this.interruptRequested || (err instanceof Error && err.name === "AbortError");
+        if (!aborted) {
+          this.bus.emit(this.agentId, {
+            event: "agent.error",
+            data: { message: err instanceof Error ? err.message : String(err) },
+          });
+          const message = err instanceof Error ? err.message : String(err);
+          void appendAgentStreamEvent({
+            agentId: this.agentId,
+            kind: "error",
+            error: message,
+          });
+        }
       } finally {
         this.running = false;
+        this.workAbort = null;
       }
     }
   }
@@ -541,128 +714,203 @@ class AgentRunner {
     }>
   ) {
     const workspaceId = await store.getGroupWorkspaceId({ groupId });
-    const agent = await store.getAgent({ agentId: this.agentId });
-    const parsed = safeJsonParse<unknown>(agent.llmHistory, {});
-    const history = Array.isArray(parsed) ? (parsed as HistoryMessage[]) : [];
-    const skillsBlock = await buildSkillsBlock();
-    const hasSkills = historyHasSkills(history);
-
-    if (history.length === 0) {
-      const role = agent.role;
-      history.push({
-        role: "system",
-        content:
-          `You are an agent in an IM system.\n` +
-          `Your agent_id is: ${this.agentId}.\n` +
-          `Your workspace_id is: ${workspaceId}.\n` +
-          `Your role is: ${role}.\n` +
-          `Act strictly as this role when replying. Be concise and helpful.\n` +
-          `Your replies are NOT automatically delivered to humans.\n` +
-          `To send messages, you MUST call tools like send_group_message or send_direct_message.\n` +
-          `If you need to coordinate with other agents, you may use tools like self, list_agents, create, send, list_groups, list_group_members, create_group, send_group_message, send_direct_message, and get_group_messages.\n` +
-          `If you need to run shell commands, use the bash tool.` +
-          (skillsBlock ? `\n\n${skillsBlock}` : ""),
-      });
-    } else if (skillsBlock && !hasSkills) {
-      history.push({ role: "system", content: skillsBlock });
-    }
-
-    const userContent = unreadMessages
-      .map((m) => `[group:${groupId}] ${m.senderId}: ${m.content}`)
-      .join("\n");
-    history.push({ role: "user", content: userContent });
-
     const lastId = unreadMessages[unreadMessages.length - 1]?.id;
-    if (lastId) {
-      await store.markGroupReadToMessage({ groupId, readerId: this.agentId, messageId: lastId });
-    }
+    if (!lastId) return;
 
-    const { assistantText, assistantThinking, didSend: firstDidSend } = await this.runWithTools({
+    const processing = await processingStore.beginRun({
+      agentId: this.agentId,
       groupId,
       workspaceId,
-      history,
+      lastMessageId: lastId,
+      messageIds: unreadMessages.map((m) => m.id),
     });
 
-    history.push({
-      role: "assistant",
-      content: assistantText,
-      reasoning_content: assistantThinking || undefined,
-    });
-
-    let didSend = firstDidSend;
-
-    if (!didSend && !this.interruptRequested) {
-      history.push({
-        role: "user",
-        content:
-          "Reminder: 本轮未调用 send_*。先判断是否需要对外可见；需要时使用 send_group_message 或 send_direct_message，无需时可不发送。",
+    if (processing.status === "completed") {
+      await processingStore.markProcessedToMessage({
+        groupId,
+        readerId: this.agentId,
+        messageId: lastId,
       });
+      return;
+    }
 
-      const followup = await this.runWithTools({
+    try {
+      const agent = await store.getAgent({ agentId: this.agentId });
+      const parsed = safeJsonParse<unknown>(agent.llmHistory, {});
+      const history = Array.isArray(parsed) ? (parsed as HistoryMessage[]) : [];
+      const skillsBlock = await buildSkillsBlock();
+      const hasSkills = historyHasSkills(history);
+      const allowBash = isHostBashAllowed();
+
+      if (history.length === 0) {
+        const role = agent.role;
+        history.push({
+          role: "system",
+          content:
+            `You are an agent in an IM system.\n` +
+            `Your agent_id is: ${this.agentId}.\n` +
+            `Your workspace_id is: ${workspaceId}.\n` +
+            `Your role is: ${role}.\n` +
+            `Act strictly as this role when replying. Be concise and helpful.\n` +
+            `Your replies are NOT automatically delivered to humans.\n` +
+            `To send messages, you MUST call tools like send_group_message or send_direct_message.\n` +
+            `If you need to coordinate with other agents, you may use tools like self, list_agents, create, send, list_groups, list_group_members, create_group, send_group_message, send_direct_message, and get_group_messages.\n` +
+            (allowBash
+              ? `If you need to run shell commands, use the bash tool.`
+              : `Host shell (bash) is disabled unless the operator enables allowHostBash.`) +
+            (skillsBlock ? `\n\n${skillsBlock}` : ""),
+        });
+      } else if (skillsBlock && !hasSkills) {
+        history.push({ role: "system", content: skillsBlock });
+      }
+
+      const userContent = unreadMessages
+        .map((m) => `[group:${groupId}] ${m.senderId}: ${m.content}`)
+        .join("\n");
+      history.push({ role: "user", content: userContent });
+
+      const research = await researchStore.getActiveRunForGroup({ groupId });
+      if (research) {
+        const revisions = await researchStore.listPlanRevisions(research.id);
+        const plan = revisions.find((item) => item.version === research.planVersion) ?? revisions[0] ?? null;
+        const participant = await researchStore.getParticipant({ runId: research.id, agentId: this.agentId });
+        const unused = (await researchStore.listEvidence({ runId: research.id })).filter((item) => !item.claimId);
+        history.push({
+          role: "system",
+          content: formatResearchContext({
+            run: research,
+            plan,
+            role: participant?.role ?? null,
+            unusedCount: unused.length,
+          }),
+        });
+      }
+
+      const { assistantText, assistantThinking, didSend: firstDidSend } = await this.runWithTools({
         groupId,
         workspaceId,
         history,
+        processingRunId: processing.id,
       });
-
-      if (followup.didSend) {
-        didSend = true;
-      }
 
       history.push({
         role: "assistant",
-        content: followup.assistantText,
-        reasoning_content: followup.assistantThinking || undefined,
+        content: assistantText,
+        reasoning_content: assistantThinking || undefined,
       });
 
-      // 兜底：如果模型未显式调用 send_*，但回复了文本（且不是“无需发送”），自动将回复投递到当前群组
+      let didSend = firstDidSend || processing.didSend;
+
       if (!didSend && !this.interruptRequested) {
-        const fallbackText = (followup.assistantText || assistantText || "").trim();
-        if (fallbackText && fallbackText !== "无需发送") {
-          const members = await store.listGroupMemberIds({ groupId });
-          const result = await store.sendMessage({
-            groupId,
-            senderId: this.agentId,
-            content: fallbackText,
-            contentType: "text",
-          });
-          getWorkspaceUIBus().emit(workspaceId, {
-            event: "ui.message.created",
-            data: {
-              workspaceId,
-              groupId,
-              memberIds: members,
-              message: { id: result.id, senderId: this.agentId, sendTime: result.sendTime },
-            },
-          });
+        history.push({
+          role: "user",
+          content:
+            "Reminder: 本轮未调用 send_*。先判断是否需要对外可见；需要时使用 send_group_message 或 send_direct_message，无需时可不发送。",
+        });
+
+        const followup = await this.runWithTools({
+          groupId,
+          workspaceId,
+          history,
+          processingRunId: processing.id,
+        });
+
+        if (followup.didSend) {
           didSend = true;
         }
+
+        history.push({
+          role: "assistant",
+          content: followup.assistantText,
+          reasoning_content: followup.assistantThinking || undefined,
+        });
+
+        if (!didSend && !this.interruptRequested) {
+          const fallbackText = (followup.assistantText || assistantText || "").trim();
+          if (fallbackText && fallbackText !== "无需发送") {
+            const members = await store.listGroupMemberIds({ groupId });
+            const blocked = await this.researchSendGate({ groupId, memberIds: members });
+            if (!blocked) {
+              const delivered = await processingStore.sendIdempotent({
+                runId: processing.id,
+                agentId: this.agentId,
+                groupId,
+                toolName: "fallback_send",
+                target: groupId,
+                send: () =>
+                  store.sendMessage({
+                    groupId,
+                    senderId: this.agentId,
+                    content: fallbackText,
+                    contentType: "text",
+                  }),
+              });
+              if (!delivered.reused) {
+                const result = delivered.result as { id: string; sendTime?: string };
+                getWorkspaceUIBus().emit(workspaceId, {
+                  event: "ui.message.created",
+                  data: {
+                    workspaceId,
+                    groupId,
+                    memberIds: members,
+                    message: {
+                      id: result.id,
+                      senderId: this.agentId,
+                      sendTime: result.sendTime ?? new Date().toISOString(),
+                    },
+                  },
+                });
+              }
+              didSend = true;
+            }
+          }
+        }
       }
-    }
-    await store.setAgentHistory({
-      agentId: this.agentId,
-      llmHistory: JSON.stringify(history),
-      workspaceId,
-    });
-    try {
-      await appendAgentHistorySnapshot({
+
+      if (this.interruptRequested) {
+        await processingStore.failRun(processing.id, "interrupted");
+        return;
+      }
+
+      await store.setAgentHistory({
         agentId: this.agentId,
+        llmHistory: JSON.stringify(history),
         workspaceId,
-        groupId,
-        history,
       });
-    } catch {
-      // best-effort logging
+      try {
+        await appendAgentHistorySnapshot({
+          agentId: this.agentId,
+          workspaceId,
+          groupId,
+          history,
+        });
+      } catch {
+        // best-effort logging
+      }
+      getWorkspaceUIBus().emit(workspaceId, {
+        event: "ui.agent.history.persisted",
+        data: { workspaceId, agentId: this.agentId, groupId, historyLength: history.length },
+      });
+      await processingStore.completeRun(processing.id, didSend);
+      await processingStore.markProcessedToMessage({
+        groupId,
+        readerId: this.agentId,
+        messageId: lastId,
+      });
+    } catch (err) {
+      await processingStore.failRun(
+        processing.id,
+        err instanceof Error ? err.message : String(err)
+      );
+      throw err;
     }
-    getWorkspaceUIBus().emit(workspaceId, {
-      event: "ui.agent.history.persisted",
-      data: { workspaceId, agentId: this.agentId, groupId, historyLength: history.length },
-    });
   }
 
   private async runWithTools(input: {
     groupId: UUID;
     workspaceId: UUID;
     history: HistoryMessage[];
+    processingRunId?: UUID;
   }) {
     const maxToolRounds = 3;
     let assistantText = "";
@@ -694,13 +942,14 @@ class AgentRunner {
       });
 
       for (const call of res.toolCalls) {
-        if (call.name && SEND_TOOL_NAMES.has(call.name)) {
-          didSend = true;
-        }
         const result = await this.executeToolCall({
           groupId: input.groupId,
           call,
+          processingRunId: input.processingRunId,
         });
+        if (didSendSucceed(call.name, result as { ok?: unknown })) {
+          didSend = true;
+        }
         this.bus.emit(this.agentId, {
           event: "agent.stream",
           data: {
@@ -731,7 +980,75 @@ class AgentRunner {
     return { assistantText, assistantThinking, didSend };
   }
 
-  private async executeToolCall(input: { groupId: UUID; call: ToolCall }) {
+  private async researchSendGate(input: {
+    groupId: UUID;
+    targetId?: string;
+    memberIds?: UUID[];
+  }): Promise<{ ok: false; error: string } | null> {
+    const run = await researchStore.getActiveRunForGroup({ groupId: input.groupId });
+    if (!run) return null;
+    const sender = await researchStore.getParticipant({ runId: run.id, agentId: this.agentId });
+    const senderRole = sender?.role ?? null;
+
+    if (input.targetId) {
+      const targetRoleName = await store.getAgentRole({ agentId: input.targetId }).catch(() => null);
+      const targetIsHuman = targetRoleName === "human";
+      const targetParticipant = targetIsHuman
+        ? null
+        : await researchStore.getParticipant({ runId: run.id, agentId: input.targetId });
+      const decision = peerMessageAllowed({
+        phase: run.phase,
+        senderRole,
+        targetRole: targetParticipant?.role ?? (targetIsHuman ? null : "worker"),
+        targetIsHuman,
+      });
+      if (!decision.allowed) return { ok: false, error: decision.reason };
+      return null;
+    }
+
+    const memberIds = input.memberIds ?? (await store.listGroupMemberIds({ groupId: input.groupId }));
+    const memberRoles: Array<ParticipantRole | "human" | null> = [];
+    for (const memberId of memberIds) {
+      const roleName = await store.getAgentRole({ agentId: memberId }).catch(() => null);
+      if (roleName === "human") {
+        memberRoles.push("human");
+        continue;
+      }
+      const part = await researchStore.getParticipant({ runId: run.id, agentId: memberId });
+      memberRoles.push(part?.role ?? "worker");
+    }
+    const decision = groupSendAllowed({
+      phase: run.phase,
+      senderRole,
+      memberRoles,
+    });
+    if (!decision.allowed) return { ok: false, error: decision.reason };
+    return null;
+  }
+
+  private async deliverSend<T extends { id: string }>(input: {
+    processingRunId?: UUID;
+    groupId: UUID;
+    toolName: string;
+    target: string;
+    send: () => Promise<T>;
+  }): Promise<{ ok: true; reused: boolean } & T> {
+    if (!input.processingRunId) {
+      const result = await input.send();
+      return { ok: true, reused: false, ...result };
+    }
+    const delivered = await processingStore.sendIdempotent({
+      runId: input.processingRunId,
+      agentId: this.agentId,
+      groupId: input.groupId,
+      toolName: input.toolName,
+      target: input.target,
+      send: input.send,
+    });
+    return { ok: true, reused: delivered.reused, ...(delivered.result as T) };
+  }
+
+  private async executeToolCall(input: { groupId: UUID; call: ToolCall; processingRunId?: UUID }) {
     const name = input.call.name ?? "";
     const workspaceId = await store.getGroupWorkspaceId({ groupId: input.groupId });
     const toolMeta = { toolCallId: input.call.id, toolName: input.call.name };
@@ -761,392 +1078,21 @@ class AgentRunner {
       });
     };
 
-    if (name === "self") {
-      const role = await store.getAgentRole({ agentId: this.agentId }).catch(() => null);
-      emitToolDone(true);
-      return { ok: true, agentId: this.agentId, workspaceId, role };
-    }
-
-    if (name === "get_skill") {
-      const args = safeJsonParse<{ skill_name?: string; name?: string }>(
-        input.call.argumentsText,
-        {}
-      );
-      const skillName = (args.skill_name ?? args.name ?? "").trim();
-      if (!skillName) {
-        emitToolDone(false);
-        return { ok: false, error: "Missing skill_name" };
-      }
-
-      const loader = await getSkillLoader();
-      const skill = await loader.getSkill(skillName);
-      if (!skill) {
-        emitToolDone(false);
-        return { ok: false, error: `Unknown skill: ${skillName}`, available: await loader.listSkills() };
-      }
-
-      emitToolDone(true);
-      return { ok: true, content: formatSkillPrompt(skill) };
-    }
-
-    if (name === "web_search") {
-      const args = safeJsonParse<{ query?: string; maxResults?: number; topic?: string }>(
-        input.call.argumentsText,
-        {}
-      );
-      const query = (args.query ?? "").trim();
-      if (!query) {
-        emitToolDone(false);
-        return { ok: false, error: "Missing query" };
-      }
-
-      const result = await SearchTool.call(
-        {
-          query,
-          maxResults: Number(args.maxResults) > 0 ? Number(args.maxResults) : 8,
-          topic: args.topic === "news" ? "news" : "general",
-        },
-        {
-          context: {
-            workspaceId,
-            agentId: this.agentId,
-            messages: [],
-          },
-          canUseTool: () => true,
-        }
-      );
-
-      emitToolDone(result.success);
-      if (!result.success) {
-        return { ok: false, error: result.error ?? "web_search failed" };
-      }
-      return { ok: true, ...(result.data as Record<string, unknown>) };
-    }
-
-    if (name === "bash") {
-      const args = safeJsonParse<{
-        command?: string;
-        cwd?: string;
-        timeoutMs?: number;
-        maxOutputKB?: number;
-      }>(input.call.argumentsText, {});
-      const command = (args.command ?? "").trim();
-      if (!command) {
-        emitToolDone(false);
-        return { ok: false, error: "Missing command" };
-      }
-
-      const workspaceRoot = process.env.AGENT_WORKDIR ?? process.cwd();
-      const requestedCwd = (args.cwd ?? "").trim();
-      let finalCwd = workspaceRoot;
-      if (requestedCwd) {
-        const resolved = path.isAbsolute(requestedCwd)
-          ? requestedCwd
-          : path.resolve(workspaceRoot, requestedCwd);
-        const rootResolved = path.resolve(workspaceRoot);
-        if (!resolved.startsWith(rootResolved)) {
-          emitToolDone(false);
-          return { ok: false, error: "cwd must be within workspace root", workspaceRoot };
-        }
-        finalCwd = resolved;
-      }
-
-      const timeoutMs = Number(args.timeoutMs) > 0 ? Number(args.timeoutMs) : 120000;
-      const maxOutputKB = Number(args.maxOutputKB) > 0 ? Number(args.maxOutputKB) : 1024;
-      const maxBuffer = Math.max(64 * 1024, Math.floor(maxOutputKB * 1024));
-      const execAsync = promisify(exec);
-
-      try {
-        const { stdout, stderr } = await execAsync(command, {
-          cwd: finalCwd,
-          timeout: timeoutMs,
-          maxBuffer,
-          shell: "/bin/bash",
-        });
-        emitToolDone(true);
-        return { ok: true, stdout, stderr, exitCode: 0, cwd: finalCwd };
-      } catch (err: any) {
-        const stdout = err?.stdout ?? "";
-        const stderr = err?.stderr ?? "";
-        const exitCode = typeof err?.code === "number" ? err.code : null;
-        const signal = typeof err?.signal === "string" ? err.signal : null;
-        emitToolDone(false);
-        return {
-          ok: false,
-          stdout,
-          stderr,
-          exitCode,
-          signal,
-          cwd: finalCwd,
-          error: String(err?.message ?? err),
-        };
-      }
-    }
-
-    if (name === "create") {
-      const args = safeJsonParse<{ role?: string; guidance?: string }>(input.call.argumentsText, {});
-      const role = (args.role ?? "").trim();
-      const guidance = (args.guidance ?? "").trim();
-      if (!role) {
-        emitToolDone(false);
-        return { ok: false, error: "Missing role" };
-      }
-
-      const created = await store.createSubAgentWithP2P({
+    const handler = builtinToolHandlers[name];
+    if (handler) {
+      return handler({
+        agentId: this.agentId,
         workspaceId,
-        creatorId: this.agentId,
-        role,
-        guidance,
+        groupId: input.groupId,
+        processingRunId: input.processingRunId,
+        argumentsText: input.call.argumentsText,
+        emitDone: emitToolDone,
+        signal: this.workAbort?.signal,
+        ensureRunner: (id) => this.ensureRunner(id),
+        wakeAgent: (id) => this.wakeAgent(id),
+        researchSendGate: (gate) => this.researchSendGate(gate),
+        deliverSend: (sendInput) => this.deliverSend(sendInput),
       });
-      this.ensureRunner(created.agentId);
-      getWorkspaceUIBus().emit(workspaceId, {
-        event: "ui.agent.created",
-        data: { workspaceId, agent: { id: created.agentId, role, parentId: this.agentId } },
-      });
-      emitToolDone(true);
-      return { ok: true, agentId: created.agentId, role, groupId: created.groupId };
-    }
-
-    if (name === "list_agents") {
-      const agents = await store.listAgentsMeta({ workspaceId });
-      emitToolDone(true);
-      return { ok: true, agents };
-    }
-
-    if (name === "send") {
-      const args = safeJsonParse<{ to?: string; content?: string }>(input.call.argumentsText, {});
-      const to = (args.to ?? "").trim();
-      const content = (args.content ?? "").trim();
-      if (!to) {
-        emitToolDone(false);
-        return { ok: false, error: "Missing to" };
-      }
-      if (!content) {
-        emitToolDone(false);
-        return { ok: false, error: "Missing content" };
-      }
-
-      const delivered = await store.sendDirectMessage({
-        workspaceId,
-        fromId: this.agentId,
-        toId: to,
-        // Do not auto-add the human into agent↔agent threads; sidebar only shows human-participant chats.
-        content,
-        contentType: "text",
-        groupName: null,
-      });
-
-      const directMembers = await store.listGroupMemberIds({ groupId: delivered.groupId });
-      getWorkspaceUIBus().emit(workspaceId, {
-        event: "ui.message.created",
-        data: {
-          workspaceId,
-          groupId: delivered.groupId,
-          memberIds: directMembers,
-          message: { id: delivered.messageId, senderId: this.agentId, sendTime: delivered.sendTime },
-        },
-      });
-
-      const toRole = await store.getAgentRole({ agentId: to }).catch(() => null);
-      if (toRole && toRole !== "human") {
-        this.ensureRunner(to);
-        this.wakeAgent(to);
-      }
-
-      emitToolDone(true);
-      return { ok: true, ...delivered };
-    }
-
-    if (name === "list_groups") {
-      const groups = await store.listGroups({ workspaceId, agentId: this.agentId });
-      emitToolDone(true);
-      return { ok: true, groups };
-    }
-
-    if (name === "list_group_members") {
-      const args = safeJsonParse<{ groupId?: string }>(input.call.argumentsText, {});
-      const groupId = (args.groupId ?? "").trim();
-      if (!groupId) {
-        emitToolDone(false);
-        return { ok: false, error: "Missing groupId" };
-      }
-      const members = await store.listGroupMemberIds({ groupId });
-      if (!members.includes(this.agentId)) {
-        emitToolDone(false);
-        return { ok: false, error: "Access denied" };
-      }
-      emitToolDone(true);
-      return { ok: true, members };
-    }
-
-    if (name === "create_group") {
-      const args = safeJsonParse<{ memberIds?: string[]; name?: string }>(input.call.argumentsText, {});
-      const memberIds = (args.memberIds ?? []).map((id) => id.trim()).filter(Boolean);
-      if (memberIds.length < 2) {
-        emitToolDone(false);
-        return { ok: false, error: "memberIds must have >= 2 members" };
-      }
-      if (!memberIds.includes(this.agentId)) {
-        memberIds.push(this.agentId);
-      }
-      let groupId = "";
-      let groupName: string | null = args.name ?? null;
-      if (memberIds.length === 2) {
-        const existing = await store.findLatestExactP2PGroupId({
-          workspaceId,
-          memberA: memberIds[0]!,
-          memberB: memberIds[1]!,
-          preferredName: args.name ?? null,
-        });
-        groupId =
-          (await store.mergeDuplicateExactP2PGroups({
-            workspaceId,
-            memberA: memberIds[0]!,
-            memberB: memberIds[1]!,
-            preferredName: args.name ?? null,
-          })) ??
-          (
-            await store.createGroup({
-              workspaceId,
-              memberIds,
-              name: args.name ?? undefined,
-            })
-          ).id;
-        if (!existing) {
-          getWorkspaceUIBus().emit(workspaceId, {
-            event: "ui.group.created",
-            data: { workspaceId, group: { id: groupId, name: groupName, memberIds } },
-          });
-        }
-      } else {
-        const created = await store.createGroup({ workspaceId, memberIds, name: args.name ?? undefined });
-        groupId = created.id;
-        groupName = created.name;
-        getWorkspaceUIBus().emit(workspaceId, {
-          event: "ui.group.created",
-          data: { workspaceId, group: { id: groupId, name: groupName, memberIds } },
-        });
-      }
-      emitToolDone(true);
-      return { ok: true, groupId, name: groupName };
-    }
-
-    if (name === "send_group_message") {
-      const args = safeJsonParse<{ groupId?: string; content?: string; contentType?: string }>(
-        input.call.argumentsText,
-        {}
-      );
-      const groupId = (args.groupId ?? "").trim();
-      const content = (args.content ?? "").trim();
-      if (!groupId) {
-        emitToolDone(false);
-        return { ok: false, error: "Missing groupId" };
-      }
-      if (!content) {
-        emitToolDone(false);
-        return { ok: false, error: "Missing content" };
-      }
-
-      const members = await store.listGroupMemberIds({ groupId });
-      if (!members.includes(this.agentId)) {
-        emitToolDone(false);
-        return { ok: false, error: "Access denied" };
-      }
-
-      const result = await store.sendMessage({
-        groupId,
-        senderId: this.agentId,
-        content,
-        contentType: args.contentType ?? "text",
-      });
-
-      getWorkspaceUIBus().emit(workspaceId, {
-        event: "ui.message.created",
-        data: {
-          workspaceId,
-          groupId,
-          memberIds: members,
-          message: { id: result.id, senderId: this.agentId, sendTime: result.sendTime },
-        },
-      });
-
-      for (const memberId of members) {
-        if (memberId === this.agentId) continue;
-        const role = await store.getAgentRole({ agentId: memberId }).catch(() => null);
-        if (role === "human" || role === null) continue;
-        this.ensureRunner(memberId);
-        this.wakeAgent(memberId);
-      }
-
-      emitToolDone(true);
-      return { ok: true, ...result };
-    }
-
-    if (name === "send_direct_message") {
-      const args = safeJsonParse<{ toAgentId?: string; content?: string; contentType?: string }>(
-        input.call.argumentsText,
-        {}
-      );
-      const toAgentId = (args.toAgentId ?? "").trim();
-      const content = (args.content ?? "").trim();
-      if (!toAgentId) {
-        emitToolDone(false);
-        return { ok: false, error: "Missing toAgentId" };
-      }
-      if (!content) {
-        emitToolDone(false);
-        return { ok: false, error: "Missing content" };
-      }
-
-      const delivered = await store.sendDirectMessage({
-        workspaceId,
-        fromId: this.agentId,
-        toId: toAgentId,
-        content,
-        contentType: args.contentType ?? "text",
-        groupName: null,
-      });
-      const groupId = delivered.groupId;
-      const channel = delivered.channel;
-      const directMembers = await store.listGroupMemberIds({ groupId });
-      getWorkspaceUIBus().emit(workspaceId, {
-        event: "ui.message.created",
-        data: {
-          workspaceId,
-          groupId,
-          memberIds: directMembers,
-          message: { id: delivered.messageId, senderId: this.agentId, sendTime: delivered.sendTime },
-        },
-      });
-
-      this.ensureRunner(toAgentId);
-      this.wakeAgent(toAgentId);
-
-      emitToolDone(true);
-      return {
-        ok: true,
-        channel,
-        groupId,
-        messageId: delivered.messageId,
-        sendTime: delivered.sendTime,
-      };
-    }
-
-    if (name === "get_group_messages") {
-      const args = safeJsonParse<{ groupId?: string }>(input.call.argumentsText, {});
-      const groupId = (args.groupId ?? "").trim();
-      if (!groupId) {
-        emitToolDone(false);
-        return { ok: false, error: "Missing groupId" };
-      }
-      const members = await store.listGroupMemberIds({ groupId });
-      if (!members.includes(this.agentId)) {
-        emitToolDone(false);
-        return { ok: false, error: "Access denied" };
-      }
-      const messages = await store.listMessages({ groupId });
-      emitToolDone(true);
-      return { ok: true, messages };
     }
 
     const mcp = await getMcpRegistry(BUILTIN_TOOL_NAMES);
@@ -1159,6 +1105,113 @@ class AgentRunner {
 
     emitToolDone(false);
     return { ok: false, error: `Unknown tool: ${name}` };
+  }
+
+  private async consumeChatCompletionsStream(input: {
+    body: ReadableStream<Uint8Array>;
+    ctx: { workspaceId: UUID; groupId: UUID; round: number };
+  }) {
+    const assembler = new OpenAIStreamAssembler();
+    let prev = assembler.snapshot();
+    let assistantText = "";
+    let assistantThinking = "";
+
+    for await (const evt of parseSSEJsonLines(input.body)) {
+      const state = assembler.push(evt as any);
+      const reasoningDelta = state.reasoningContent.slice(prev.reasoningContent.length);
+      const contentDelta = state.content.slice(prev.content.length);
+      const toolCallDeltas = extractToolCallDeltas(evt as any, prev, state);
+
+      if (reasoningDelta) {
+        assistantThinking += reasoningDelta;
+        this.bus.emit(this.agentId, {
+          event: "agent.stream",
+          data: { kind: "reasoning", delta: reasoningDelta },
+        });
+        void appendAgentStreamEvent({
+          agentId: this.agentId,
+          round: input.ctx.round,
+          kind: "reasoning",
+          delta: reasoningDelta,
+        });
+      }
+
+      if (contentDelta) {
+        assistantText += contentDelta;
+        this.bus.emit(this.agentId, {
+          event: "agent.stream",
+          data: { kind: "content", delta: contentDelta },
+        });
+        void appendAgentStreamEvent({
+          agentId: this.agentId,
+          round: input.ctx.round,
+          kind: "content",
+          delta: contentDelta,
+        });
+      }
+
+      for (const delta of toolCallDeltas) {
+        this.bus.emit(this.agentId, {
+          event: "agent.stream",
+          data: {
+            kind: "tool_calls",
+            delta: delta.delta,
+            tool_call_id: delta.tool_call_id,
+            tool_call_name: delta.tool_call_name,
+          },
+        });
+        void appendAgentStreamEvent({
+          agentId: this.agentId,
+          round: input.ctx.round,
+          kind: "tool_calls",
+          delta: delta.delta,
+          tool_call_id: delta.tool_call_id,
+          tool_call_name: delta.tool_call_name,
+        });
+      }
+
+      prev = state;
+    }
+
+    this.bus.emit(this.agentId, {
+      event: "agent.done",
+      data: { finishReason: prev.finishReason ?? undefined },
+    });
+    void appendAgentStreamEvent({
+      agentId: this.agentId,
+      round: input.ctx.round,
+      kind: "done",
+      finishReason: prev.finishReason ?? null,
+    });
+    getWorkspaceUIBus().emit(input.ctx.workspaceId, {
+      event: "ui.agent.llm.done",
+      data: {
+        workspaceId: input.ctx.workspaceId,
+        agentId: this.agentId,
+        groupId: input.ctx.groupId,
+        round: input.ctx.round,
+        finishReason: prev.finishReason ?? undefined,
+      },
+    });
+
+    const finalState = assembler.snapshot();
+    if (finalState.usage && finalState.usage.totalTokens > 0) {
+      try {
+        await store.setGroupContextTokens({
+          groupId: input.ctx.groupId,
+          tokens: finalState.usage.totalTokens,
+        });
+      } catch {
+        // best-effort
+      }
+    }
+
+    return {
+      assistantText,
+      assistantThinking,
+      toolCalls: (finalState.toolCalls ?? []) as ToolCall[],
+      finishReason: finalState.finishReason,
+    };
   }
 
   private async callLlmStreaming(
@@ -1219,6 +1272,7 @@ class AgentRunner {
       method: "POST",
       headers,
       body: requestBody,
+      signal: this.workAbort?.signal,
     });
 
     if (!upstream.ok || !upstream.body) {
@@ -1226,109 +1280,7 @@ class AgentRunner {
       throw new Error(`OpenRouter upstream error: ${upstream.status} ${text}`);
     }
 
-    const assembler = new OpenAIStreamAssembler();
-    let prev = assembler.snapshot();
-    let assistantText = "";
-    let assistantThinking = "";
-
-    for await (const evt of parseSSEJsonLines(upstream.body)) {
-      const state = assembler.push(evt as any);
-
-      const reasoningDelta = state.reasoningContent.slice(prev.reasoningContent.length);
-      const contentDelta = state.content.slice(prev.content.length);
-      const toolCallDeltas = extractToolCallDeltas(evt as any, prev, state);
-
-      if (reasoningDelta) {
-        assistantThinking += reasoningDelta;
-        this.bus.emit(this.agentId, {
-          event: "agent.stream",
-          data: { kind: "reasoning", delta: reasoningDelta },
-        });
-        void appendAgentStreamEvent({
-          agentId: this.agentId,
-          round: ctx.round,
-          kind: "reasoning",
-          delta: reasoningDelta,
-        });
-      }
-
-      if (contentDelta) {
-        assistantText += contentDelta;
-        this.bus.emit(this.agentId, {
-          event: "agent.stream",
-          data: { kind: "content", delta: contentDelta },
-        });
-        void appendAgentStreamEvent({
-          agentId: this.agentId,
-          round: ctx.round,
-          kind: "content",
-          delta: contentDelta,
-        });
-      }
-
-      for (const delta of toolCallDeltas) {
-        this.bus.emit(this.agentId, {
-          event: "agent.stream",
-          data: {
-            kind: "tool_calls",
-            delta: delta.delta,
-            tool_call_id: delta.tool_call_id,
-            tool_call_name: delta.tool_call_name,
-          },
-        });
-        void appendAgentStreamEvent({
-          agentId: this.agentId,
-          round: ctx.round,
-          kind: "tool_calls",
-          delta: delta.delta,
-          tool_call_id: delta.tool_call_id,
-          tool_call_name: delta.tool_call_name,
-        });
-      }
-
-      prev = state;
-    }
-
-    this.bus.emit(this.agentId, {
-      event: "agent.done",
-      data: { finishReason: prev.finishReason ?? undefined },
-    });
-    void appendAgentStreamEvent({
-      agentId: this.agentId,
-      round: ctx.round,
-      kind: "done",
-      finishReason: prev.finishReason ?? null,
-    });
-    getWorkspaceUIBus().emit(ctx.workspaceId, {
-      event: "ui.agent.llm.done",
-      data: {
-        workspaceId: ctx.workspaceId,
-        agentId: this.agentId,
-        groupId: ctx.groupId,
-        round: ctx.round,
-        finishReason: prev.finishReason ?? undefined,
-      },
-    });
-
-    const finalState = assembler.snapshot();
-
-    if (finalState.usage && finalState.usage.totalTokens > 0) {
-      try {
-        await store.setGroupContextTokens({
-          groupId: ctx.groupId,
-          tokens: finalState.usage.totalTokens,
-        });
-      } catch {
-        // Best effort - don't fail if token tracking fails
-      }
-    }
-
-    return {
-      assistantText,
-      assistantThinking,
-      toolCalls: (finalState.toolCalls ?? []) as ToolCall[],
-      finishReason: finalState.finishReason,
-    };
+    return this.consumeChatCompletionsStream({ body: upstream.body, ctx });
   }
 
   private async callArkStreaming(
@@ -1376,6 +1328,7 @@ class AgentRunner {
       method: "POST",
       headers,
       body: requestBody,
+      signal: this.workAbort?.signal,
     });
 
     if (!upstream.ok || !upstream.body) {
@@ -1383,110 +1336,9 @@ class AgentRunner {
       throw new Error(`Ark upstream error: ${upstream.status} ${text}`);
     }
 
-    const assembler = new OpenAIStreamAssembler();
-    let prev = assembler.snapshot();
-    let assistantText = "";
-    let assistantThinking = "";
-
-    for await (const evt of parseSSEJsonLines(upstream.body)) {
-      const state = assembler.push(evt as any);
-
-      const reasoningDelta = state.reasoningContent.slice(prev.reasoningContent.length);
-      const contentDelta = state.content.slice(prev.content.length);
-      const toolCallDeltas = extractToolCallDeltas(evt as any, prev, state);
-
-      if (reasoningDelta) {
-        assistantThinking += reasoningDelta;
-        this.bus.emit(this.agentId, {
-          event: "agent.stream",
-          data: { kind: "reasoning", delta: reasoningDelta },
-        });
-        void appendAgentStreamEvent({
-          agentId: this.agentId,
-          round: ctx.round,
-          kind: "reasoning",
-          delta: reasoningDelta,
-        });
-      }
-
-      if (contentDelta) {
-        assistantText += contentDelta;
-        this.bus.emit(this.agentId, {
-          event: "agent.stream",
-          data: { kind: "content", delta: contentDelta },
-        });
-        void appendAgentStreamEvent({
-          agentId: this.agentId,
-          round: ctx.round,
-          kind: "content",
-          delta: contentDelta,
-        });
-      }
-
-      for (const delta of toolCallDeltas) {
-        this.bus.emit(this.agentId, {
-          event: "agent.stream",
-          data: {
-            kind: "tool_calls",
-            delta: delta.delta,
-            tool_call_id: delta.tool_call_id,
-            tool_call_name: delta.tool_call_name,
-          },
-        });
-        void appendAgentStreamEvent({
-          agentId: this.agentId,
-          round: ctx.round,
-          kind: "tool_calls",
-          delta: delta.delta,
-          tool_call_id: delta.tool_call_id,
-          tool_call_name: delta.tool_call_name,
-        });
-      }
-
-      prev = state;
-    }
-
-    this.bus.emit(this.agentId, {
-      event: "agent.done",
-      data: { finishReason: prev.finishReason ?? undefined },
-    });
-    void appendAgentStreamEvent({
-      agentId: this.agentId,
-      round: ctx.round,
-      kind: "done",
-      finishReason: prev.finishReason ?? null,
-    });
-    getWorkspaceUIBus().emit(ctx.workspaceId, {
-      event: "ui.agent.llm.done",
-      data: {
-        workspaceId: ctx.workspaceId,
-        agentId: this.agentId,
-        groupId: ctx.groupId,
-        round: ctx.round,
-        finishReason: prev.finishReason ?? undefined,
-      },
-    });
-
-    const finalState = assembler.snapshot();
-
-    if (finalState.usage && finalState.usage.totalTokens > 0) {
-      try {
-        await store.setGroupContextTokens({
-          groupId: ctx.groupId,
-          tokens: finalState.usage.totalTokens,
-        });
-      } catch {
-        // Best effort - don't fail if token tracking fails
-      }
-    }
-
-    return {
-      assistantText,
-      assistantThinking,
-      toolCalls: (finalState.toolCalls ?? []) as ToolCall[],
-      finishReason: finalState.finishReason,
-    };
+    return this.consumeChatCompletionsStream({ body: upstream.body, ctx });
   }
+
 
   private async callMiniMaxStreaming(
     history: HistoryMessage[],
@@ -1541,6 +1393,7 @@ class AgentRunner {
       method: "POST",
       headers,
       body: requestBody,
+      signal: this.workAbort?.signal,
     });
 
     if (!upstream.ok || !upstream.body) {
@@ -1555,79 +1408,7 @@ class AgentRunner {
       throw new Error(`MiniMax upstream error: ${msg}`);
     }
 
-    const assembler = new OpenAIStreamAssembler();
-    let prev = assembler.snapshot();
-    let assistantText = "";
-    let assistantThinking = "";
-
-    for await (const evt of parseSSEJsonLines(upstream.body)) {
-      const state = assembler.push(evt as any);
-      const reasoningDelta = state.reasoningContent.slice(prev.reasoningContent.length);
-      const contentDelta = state.content.slice(prev.content.length);
-      const toolCallDeltas = extractToolCallDeltas(evt as any, prev, state);
-
-      if (reasoningDelta) {
-        assistantThinking += reasoningDelta;
-        this.bus.emit(this.agentId, { event: "agent.stream", data: { kind: "reasoning", delta: reasoningDelta } });
-        void appendAgentStreamEvent({ agentId: this.agentId, round: ctx.round, kind: "reasoning", delta: reasoningDelta });
-      }
-
-      if (contentDelta) {
-        assistantText += contentDelta;
-        this.bus.emit(this.agentId, { event: "agent.stream", data: { kind: "content", delta: contentDelta } });
-        void appendAgentStreamEvent({ agentId: this.agentId, round: ctx.round, kind: "content", delta: contentDelta });
-      }
-
-      for (const delta of toolCallDeltas) {
-        this.bus.emit(this.agentId, {
-          event: "agent.stream",
-          data: { kind: "tool_calls", delta: delta.delta, tool_call_id: delta.tool_call_id, tool_call_name: delta.tool_call_name },
-        });
-        void appendAgentStreamEvent({
-          agentId: this.agentId,
-          round: ctx.round,
-          kind: "tool_calls",
-          delta: delta.delta,
-          tool_call_id: delta.tool_call_id,
-          tool_call_name: delta.tool_call_name,
-        });
-      }
-
-      prev = state;
-    }
-
-    this.bus.emit(this.agentId, {
-      event: "agent.done",
-      data: { finishReason: prev.finishReason ?? undefined },
-    });
-    void appendAgentStreamEvent({ agentId: this.agentId, round: ctx.round, kind: "done", finishReason: prev.finishReason ?? null });
-    getWorkspaceUIBus().emit(ctx.workspaceId, {
-      event: "ui.agent.llm.done",
-      data: {
-        workspaceId: ctx.workspaceId,
-        agentId: this.agentId,
-        groupId: ctx.groupId,
-        round: ctx.round,
-        finishReason: prev.finishReason ?? undefined,
-      },
-    });
-
-    const finalState = assembler.snapshot();
-
-    if (finalState.usage && finalState.usage.totalTokens > 0) {
-      try {
-        await store.setGroupContextTokens({ groupId: ctx.groupId, tokens: finalState.usage.totalTokens });
-      } catch {
-        // Best effort
-      }
-    }
-
-    return {
-      assistantText,
-      assistantThinking,
-      toolCalls: (finalState.toolCalls ?? []) as ToolCall[],
-      finishReason: finalState.finishReason,
-    };
+    return this.consumeChatCompletionsStream({ body: upstream.body, ctx });
   }
 }
 
@@ -1678,7 +1459,7 @@ export class AgentRuntime {
   private readonly runners = new Map<UUID, AgentRunner>();
   public readonly bus = new AgentEventBus();
   private bootstrapped = false;
-  static readonly VERSION = 2;
+  static readonly VERSION = 6;
 
   disposeRunner(agentId: UUID): void {
     const runner = this.runners.get(agentId);

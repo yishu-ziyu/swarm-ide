@@ -8,7 +8,11 @@
     "build": "next build --webpack",
     "start": "next start -H 127.0.0.1 -p 3017",
     "lint": "eslint",
-    "tsc:check": "tsc --noEmit"
+    "tsc:check": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test src/runtime/delivery.test.ts src/lib/config.test.ts src/research/citation-metadata.test.ts src/research/claim-policy.test.ts src/research/semantic-scholar.test.ts src/research/protocol.test.ts src/research/paper-search.test.ts src/research/report.test.ts src/research/fetch-source.test.ts src/research/notes.test.ts",
+    "test:db": "node --experimental-strip-types --test src/research/research-persistence.integration.test.ts",
+    "test:e2e-demo": "node --experimental-strip-types scripts/e2e-research-demo.ts",
+    "test:e2e-papers": "node --experimental-strip-types scripts/e2e-paper-search.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.23.0",

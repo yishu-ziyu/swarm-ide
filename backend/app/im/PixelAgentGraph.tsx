@@ -16,6 +16,7 @@ type PixelAgentGraphProps = {
   agents?: AgentNode[];
   onAgentClick?: (id: string) => void;
   selectedAgentId?: string;
+  compact?: boolean;
 };
 
 const statusColors = {
@@ -29,6 +30,7 @@ export function PixelAgentGraph({
   agents = [],
   onAgentClick,
   selectedAgentId,
+  compact = false,
 }: PixelAgentGraphProps) {
   const { t } = useLanguage();
 
@@ -60,6 +62,7 @@ export function PixelAgentGraph({
         }}>
           {t.agentNetwork}
         </h3>
+        {!compact ? (
         <div style={{ display: "flex", gap: 8 }}>
           <button style={{
             width: 32,
@@ -107,6 +110,7 @@ export function PixelAgentGraph({
             <RotateCcw size={14} />
           </button>
         </div>
+        ) : null}
       </div>
 
       {/* Graph Canvas */}

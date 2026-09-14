@@ -200,6 +200,40 @@ export interface Translations {
   arkApiKeyPlaceholder: string;
   openRouterApiKeyPlaceholder: string;
   minimaxApiKeyPlaceholder: string;
+  apiKeyConfigured: string;
+  allowHostBash: string;
+  allowHostBashHint: string;
+  researchBriefing: string;
+  researchQuestion: string;
+  researchPlan: string;
+  researchEvidence: string;
+  researchClaims: string;
+  researchUnverified: string;
+  researchNeedsReverify: string;
+  researchEmpty: string;
+  researchViewTopology: string;
+  researchHideTopology: string;
+  researchNoEvidence: string;
+  researchExcerpt: string;
+  researchPlanVersion: string;
+  researchPhaseIsolate: string;
+  researchPhaseReview: string;
+  researchPhaseCite: string;
+  researchPhaseCommit: string;
+  researchDisagreements: string;
+  researchChallenged: string;
+  researchPapers: string;
+  researchPapersEmpty: string;
+  researchSearchPapers: string;
+  researchSearch: string;
+  researchSearching: string;
+  researchSearchFailed: string;
+  researchUnknownAuthors: string;
+  researchUnknownYear: string;
+  researchAdvance: string;
+  researchAdvancing: string;
+  researchAdvanceFailed: string;
+  researchExport: string;
 }
 
 const en: Translations = {
@@ -397,6 +431,40 @@ const en: Translations = {
   arkApiKeyPlaceholder: "Ark API Key",
   openRouterApiKeyPlaceholder: "OpenRouter API Key",
   minimaxApiKeyPlaceholder: "MiniMax API Key",
+  apiKeyConfigured: "Configured — enter a new key to replace",
+  allowHostBash: "Allow host shell (bash)",
+  allowHostBashHint: "Off by default. Research agents cannot run host commands until you enable this.",
+  researchBriefing: "Research",
+  researchQuestion: "Question",
+  researchPlan: "Current plan",
+  researchEvidence: "Evidence",
+  researchClaims: "Conclusions",
+  researchUnverified: "Needs review",
+  researchNeedsReverify: "From a previous plan — not in current conclusions",
+  researchEmpty: "Send a research question in the chat. This panel will show the question, the current plan, and the evidence behind each conclusion.",
+  researchViewTopology: "View collaboration",
+  researchHideTopology: "Hide collaboration",
+  researchNoEvidence: "No supporting excerpt yet",
+  researchExcerpt: "Source excerpt",
+  researchPlanVersion: "Plan",
+  researchPhaseIsolate: "Isolated search",
+  researchPhaseReview: "Review",
+  researchPhaseCite: "Citation alignment",
+  researchPhaseCommit: "Final report",
+  researchDisagreements: "Unused evidence — open disagreements",
+  researchChallenged: "Challenged",
+  researchPapers: "Papers",
+  researchPapersEmpty: "No papers yet. Search here, or wait for agents to retrieve literature.",
+  researchSearchPapers: "Search papers by title, author, or method",
+  researchSearch: "Search",
+  researchSearching: "Searching…",
+  researchSearchFailed: "Paper search failed",
+  researchUnknownAuthors: "Author unknown",
+  researchUnknownYear: "Year unknown",
+  researchAdvance: "Next phase",
+  researchAdvancing: "Advancing…",
+  researchAdvanceFailed: "Could not advance the research phase",
+  researchExport: "Export report",
 };
 
 const zh: Translations = {
@@ -594,6 +662,40 @@ const zh: Translations = {
   arkApiKeyPlaceholder: "Ark API 密钥",
   openRouterApiKeyPlaceholder: "OpenRouter API 密钥",
   minimaxApiKeyPlaceholder: "MiniMax API 密钥",
+  apiKeyConfigured: "已配置，输入新密钥以替换",
+  allowHostBash: "允许宿主机 shell（bash）",
+  allowHostBashHint: "默认关闭。未开启前，研究 Agent 不能执行宿主机命令。",
+  researchBriefing: "研究",
+  researchQuestion: "研究问题",
+  researchPlan: "当前计划",
+  researchEvidence: "已有证据",
+  researchClaims: "结论",
+  researchUnverified: "待核查",
+  researchNeedsReverify: "来自旧计划，未重新核验，不进入当前结论",
+  researchEmpty: "在对话里提出研究问题。这里会显示问题、当前计划和每条结论背后的证据。",
+  researchViewTopology: "查看协作过程",
+  researchHideTopology: "收起协作过程",
+  researchNoEvidence: "还没有原文片段",
+  researchExcerpt: "原文",
+  researchPlanVersion: "计划",
+  researchPhaseIsolate: "隔离检索",
+  researchPhaseReview: "对质评审",
+  researchPhaseCite: "引文对齐",
+  researchPhaseCommit: "终稿",
+  researchDisagreements: "未使用的证据 · 待解决分歧",
+  researchChallenged: "被质疑",
+  researchPapers: "论文",
+  researchPapersEmpty: "还没有论文。可以在下面搜，或等 Agent 检索。",
+  researchSearchPapers: "按标题、作者或方法搜论文",
+  researchSearch: "搜索",
+  researchSearching: "搜索中…",
+  researchSearchFailed: "论文搜索失败",
+  researchUnknownAuthors: "作者未知",
+  researchUnknownYear: "年份未知",
+  researchAdvance: "进入下一阶段",
+  researchAdvancing: "推进中…",
+  researchAdvanceFailed: "无法进入下一阶段",
+  researchExport: "导出报告",
 };
 
 export const translations: Record<Language, Translations> = { en, zh };

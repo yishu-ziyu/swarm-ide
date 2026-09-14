@@ -7,6 +7,28 @@ type UUID = string;
 type GraphNode = { id: UUID; role: string; parentId: UUID | null };
 type GraphEdge = { from: UUID; to: UUID; count: number; lastSendTime: string };
 
+function edgesFromMessages(
+  recentMessages: Array<{ groupId: UUID; senderId: UUID; sendTime: string }>,
+  groupMembersById: Map<UUID, UUID[]>
+): GraphEdge[] {
+  const edgeByKey = new Map<string, GraphEdge>();
+  for (const m of recentMessages) {
+    const members = groupMembersById.get(m.groupId) ?? [];
+    for (const to of members) {
+      if (to === m.senderId) continue;
+      const key = `${m.senderId}=>${to}`;
+      const existing = edgeByKey.get(key);
+      if (!existing) {
+        edgeByKey.set(key, { from: m.senderId, to, count: 1, lastSendTime: m.sendTime });
+      } else {
+        existing.count += 1;
+        if (m.sendTime > existing.lastSendTime) existing.lastSendTime = m.sendTime;
+      }
+    }
+  }
+  return [...edgeByKey.values()];
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const workspaceId = (url.searchParams.get("workspaceId") ?? "").trim();
@@ -25,21 +47,7 @@ export async function GET(req: Request) {
     groupMembersById.set(g.id, g.memberIds);
   }
 
-  const edgeByKey = new Map<string, GraphEdge>();
-  for (const m of recentMessages) {
-    const members = groupMembersById.get(m.groupId) ?? [];
-    for (const to of members) {
-      if (to === m.senderId) continue;
-      const key = `${m.senderId}=>${to}`;
-      const existing = edgeByKey.get(key);
-      if (!existing) {
-        edgeByKey.set(key, { from: m.senderId, to, count: 1, lastSendTime: m.sendTime });
-      } else {
-        existing.count += 1;
-        if (m.sendTime > existing.lastSendTime) existing.lastSendTime = m.sendTime;
-      }
-    }
-  }
+  const edges = edgesFromMessages(recentMessages, groupMembersById);
 
   const nodes: GraphNode[] = agents.map((a) => ({
     id: a.id,
@@ -47,11 +55,11 @@ export async function GET(req: Request) {
     parentId: a.parentId,
   }));
 
-  const edges = [...edgeByKey.values()].sort((a, b) => b.lastSendTime.localeCompare(a.lastSendTime));
+  const sortedEdges = [...edges].sort((a, b) => b.lastSendTime.localeCompare(a.lastSendTime));
 
   return Response.json({
     nodes,
-    edges,
+    edges: sortedEdges,
     meta: {
       workspaceId,
       groups: groups.length,

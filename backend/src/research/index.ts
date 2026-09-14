@@ -17,3 +17,12 @@ export {
 
 // Types
 export type { SearchResult, Citation, ResearchReport } from "./research-runtime";
+export { researchStore } from "./research-store";
+export { citationDraftFromSearchHit } from "./citation-metadata";
+export { searchPapers } from "./paper-search";
+export { isCurrentConclusion, partitionClaims } from "./claim-policy";
+export {
+  peerMessageAllowed,
+  isFinalConclusion,
+  nextResearchPhase,
+} from "./protocol";

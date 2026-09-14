@@ -4,10 +4,7 @@ import { motion } from "framer-motion";
 import {
   Hexagon,
   Users,
-  Puzzle,
-  Terminal,
   ScrollText,
-  Rocket,
   Cpu,
   HelpCircle,
 } from "lucide-react";
@@ -36,10 +33,7 @@ export function PixelNavSidebar({
 
   const navItems: NavItem[] = [
     { id: "fleet", label: t.fleet, icon: Users },
-    { id: "modules", label: t.modules, icon: Puzzle },
-    { id: "terminal", label: t.terminal, icon: Terminal },
     { id: "logs", label: t.logs, icon: ScrollText },
-    { id: "deploy", label: t.deploy, icon: Rocket },
   ];
 
   return (
@@ -132,7 +126,13 @@ export function PixelNavSidebar({
                 textAlign: "left",
               }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => onNavChange?.(item.id)}
+              onClick={() => {
+                if (item.id === "logs") {
+                  window.location.href = "/dev-dashboard";
+                  return;
+                }
+                onNavChange?.(item.id);
+              }}
               onMouseEnter={(e) => {
                 if (!isActive) {
                   e.currentTarget.style.background = "var(--ui-fill)";

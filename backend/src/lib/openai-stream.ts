@@ -60,21 +60,7 @@ export class OpenAIStreamAssembler {
     if (typeof delta?.content === "string") this.content += delta.content;
 
     for (const call of delta?.tool_calls ?? []) {
-      const index = call.index ?? 0;
-      const existing =
-        this.toolCalls.get(index) ??
-        ({
-          index,
-          argumentsText: "",
-        } satisfies AssembledToolCall);
-
-      if (call.id) existing.id = call.id;
-      if (call.function?.name) existing.name = call.function.name;
-      if (typeof call.function?.arguments === "string") {
-        existing.argumentsText += call.function.arguments;
-      }
-
-      this.toolCalls.set(index, existing);
+      this.applyToolCallDelta(call);
     }
 
     if (typeof choice?.finish_reason !== "undefined") {
@@ -90,6 +76,26 @@ export class OpenAIStreamAssembler {
     }
 
     return this.snapshot();
+  }
+
+  private applyToolCallDelta(call: {
+    index?: number;
+    id?: string;
+    function?: { name?: string; arguments?: string };
+  }) {
+    const index = call.index ?? 0;
+    const existing =
+      this.toolCalls.get(index) ??
+      ({
+        index,
+        argumentsText: "",
+      } satisfies AssembledToolCall);
+    if (call.id) existing.id = call.id;
+    if (call.function?.name) existing.name = call.function.name;
+    if (typeof call.function?.arguments === "string") {
+      existing.argumentsText += call.function.arguments;
+    }
+    this.toolCalls.set(index, existing);
   }
 
   snapshot(): OpenAIAssembledState {

@@ -144,43 +144,30 @@ Johnson, M. (2023, March 15). The future of AI. Tech Insights. https://example.c
 
 ## 工具使用指南
 
-### Tavily MCP 工具
+研究模式只使用运行时已注册的工具，不要调用未提供的 Exa / tavily-extract / Chrome。
 
 ```
-tavily-search
-- 输入: search_query (string)
-- 可选: search_depth (basic/advanced), max_results (1-20)
-- 返回: results[] (url, content, published_date)
+search_papers
+- 查论文（Semantic Scholar → Crossref → arXiv）
+- 返回 authors, year, excerpt, url, evidenceId
 
-tavily-extract
-- 输入: urls (string[])
-- 返回: results[] (url, raw_content)
-```
+web_search
+- 只用于新闻和普通网页，不要用来查论文
 
-### Exa MCP 工具
+fetch_source
+- 抓取某个 http(s) URL 的正文，写入证据
 
-```
-exa-search
-- 输入: query (string), num_results (number)
-- 可选: type (paper/article), start_date, end_date
-- 返回: results[] (id, title, url, published_date, authors, abstract, score)
+record_claim
+- 登记结论，必须带 evidenceIds，否则是 unverified
 
-exa-find_similar
-- 输入: url (string)
-- 返回: similar results[]
+list_research_board / review_claim / align_claim_evidence / advance_research_phase
+- 隔离检索 → 对质 → 引文对齐 → 放行终稿
 
-exa-content
-- 输入: ids (string[])
-- 返回: full content of papers
-```
+save_research_note
+- 把 markdown 写进本工作区 research-output/
 
-### Chrome DevTools MCP (内容抓取)
-
-```
-当搜索结果需要深入提取时使用：
-- 访问 URL 获取完整页面内容
-- 提取文章全文
-- 获取无法通过 API 访问的内容
+export_report
+- 从当前结论和论文生成报告 markdown
 ```
 
 ## 质量检查清单

@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { store } from "@/lib/storage";
 import { getAgentRuntime } from "@/runtime/agent-runtime";
 import { getWorkspaceUIBus } from "@/runtime/ui-bus";
+import { onHumanResearchMessage } from "../../../../../src/research/research-actions";
 
 export async function GET(
   req: Request,
@@ -63,6 +64,20 @@ export async function POST(
   });
 
   const runtime = getAgentRuntime();
+  const senderRole = await store.getAgentRole({ agentId: body.senderId }).catch(() => null);
+  if (senderRole === "human") {
+    const outcome = await onHumanResearchMessage({
+      workspaceId,
+      groupId,
+      senderId: body.senderId,
+      content: body.content,
+      memberIds,
+    });
+    if (outcome.steered) {
+      await runtime.interruptAll({ workspaceId });
+    }
+  }
+
   void runtime.wakeAgentsForGroup(groupId, body.senderId);
 
   return Response.json(result, { status: 201 });

@@ -81,6 +81,12 @@ export type UIEvent =
         action: "insert" | "update" | "delete";
         recordId?: string | null;
       };
+    }
+  | {
+      id: number;
+      at: number;
+      event: "ui.research.updated";
+      data: { workspaceId: string; groupId: string; runId: string };
     };
 
 type Listener = (evt: UIEvent) => void;

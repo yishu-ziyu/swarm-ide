@@ -27,7 +27,7 @@ export type Citation = {
   id: string;
   type: "journal" | "conference" | "web" | "book";
   authors: string[];
-  year: number;
+  year: number | null;
   title: string;
   url?: string;
   journal?: string;
@@ -184,17 +184,18 @@ export class ResearchWorkflow {
   /**
    * Generate unique citation ID
    */
-  generateCitationId(type: Citation["type"], year: number): string {
+  generateCitationId(type: Citation["type"], year: number | null): string {
     const prefix = {
       journal: "JP",
       conference: "CP",
       web: "WB",
       book: "BK",
     }[type];
+    const yearPart = year ?? "nd";
     const existing = this.getCitations().filter(
-      (c) => c.id.startsWith(`${prefix}-${year}`)
+      (c) => c.id.startsWith(`${prefix}-${yearPart}`)
     ).length;
-    return `${prefix}-${year}-${String(existing + 1).padStart(3, "0")}`;
+    return `${prefix}-${yearPart}-${String(existing + 1).padStart(3, "0")}`;
   }
 
   /**
@@ -228,18 +229,19 @@ export class ResearchWorkflow {
    * Format citations in APA style
    */
   formatCitationAPA(citation: Citation): string {
-    const authors = citation.authors.join(", ");
+    const authors = citation.authors.length > 0 ? citation.authors.join(", ") : "Unknown";
+    const year = citation.year ?? "n.d.";
     switch (citation.type) {
       case "journal":
-        return `${authors} (${citation.year}). ${citation.title}. ${citation.journal}. ${citation.url || ""}`;
+        return `${authors} (${year}). ${citation.title}. ${citation.journal}. ${citation.url || ""}`;
       case "conference":
-        return `${authors} (${citation.year}). ${citation.title}. ${citation.url || ""}`;
+        return `${authors} (${year}). ${citation.title}. ${citation.url || ""}`;
       case "web":
-        return `${authors} (${citation.year}). ${citation.title}. Retrieved from ${citation.url}`;
+        return `${authors} (${year}). ${citation.title}. Retrieved from ${citation.url}`;
       case "book":
-        return `${authors} (${citation.year}). ${citation.title}. ${citation.url || ""}`;
+        return `${authors} (${year}). ${citation.title}. ${citation.url || ""}`;
       default:
-        return `${authors} (${citation.year}). ${citation.title}.`;
+        return `${authors} (${year}). ${citation.title}.`;
     }
   }
 }
@@ -265,27 +267,29 @@ export class CitationManager {
   }
 
   formatAPA(citation: Citation): string {
-    const authors = citation.authors.join(", ");
+    const authors = citation.authors.length > 0 ? citation.authors.join(", ") : "Unknown";
+    const year = citation.year ?? "n.d.";
     switch (citation.type) {
       case "journal":
-        return `${authors} (${citation.year}). ${citation.title}. ${citation.journal || ""}. ${citation.doi || citation.url || ""}`;
+        return `${authors} (${year}). ${citation.title}. ${citation.journal || ""}. ${citation.doi || citation.url || ""}`;
       case "web":
-        return `${authors} (${citation.year}). ${citation.title}. Retrieved from ${citation.url || ""}`;
+        return `${authors} (${year}). ${citation.title}. Retrieved from ${citation.url || ""}`;
       case "book":
-        return `${authors} (${citation.year}). ${citation.title}. ${citation.url || ""}`;
+        return `${authors} (${year}). ${citation.title}. ${citation.url || ""}`;
       default:
-        return `${authors} (${citation.year}). ${citation.title}.`;
+        return `${authors} (${year}). ${citation.title}.`;
     }
   }
 
   formatInText(citation: Citation): string {
+    const year = citation.year ?? "n.d.";
     const firstAuthor = citation.authors[0]?.split(" ")[0] || "Unknown";
-    if (citation.authors.length === 1) {
-      return `(${firstAuthor}, ${citation.year})`;
+    if (citation.authors.length <= 1) {
+      return `(${firstAuthor}, ${year})`;
     } else if (citation.authors.length === 2) {
-      return `(${firstAuthor} & ${citation.authors[1]?.split(" ")[0]}, ${citation.year})`;
+      return `(${firstAuthor} & ${citation.authors[1]?.split(" ")[0]}, ${year})`;
     } else {
-      return `(${firstAuthor} et al., ${citation.year})`;
+      return `(${firstAuthor} et al., ${year})`;
     }
   }
 }

@@ -48,7 +48,7 @@ swarm-ide/
 └── .dev/（gitignore，本地）         验收资产：acceptance-*.md ×3 + check-*.mjs ×3 + screenshots/
 ```
 
-**一条消息的旅程**：/im 输入研究需求 → IMShell → agents API → agent-runtime 拼 system prompt（skill 注入）→ LLM（openai-stream SSE）→ `web_search` tool call → SearchTool 经 MCP 层调 tavily → citation-store 落 CitationManager → `GET /api/research/citations?agentId=` 可查；/graph 读 /api/agent-graph 画协作拓扑。
+**一条消息的旅程**：/im 输入研究需求 → 侧栏研究任务 → Agent 用 `search_papers` 查论文（Scholar/Crossref/arXiv）→ 证据落 Postgres → 人可搜论文、推进阶段、导出报告；`web_search` 只做新闻网页。
 
 **设计哲学**：skill 层声明能力（prompt）→ 工具层提供行动（MCP）→ 运行时层编排循环 → 研究域沉淀产物（引文）。四层各管一段。
 
@@ -68,5 +68,6 @@ swarm-ide/
 
 - **外部阻塞**：Tavily/Exa key 均 402 credits 用尽——端到端搜索复验需充值/换 key（`.env.local` 换 key 即可，代码不用动）
 - **UI 债**：dev-dashboard 硬编码文件树字符串仍列已删文件（page.tsx:191-209）；im.png 顶部 swap_vert 芯片裁切；font-weight 未强制 regular/medium 两档（契约可补 B7）
-- **路线**：③ im-lab 双入口收敛（V1/V2 按视图分流已部分达成，DEV_LOG 阶段八设计待全量落地）④ 学术语料 API 接入（Semantic Scholar 类源是检索质量上限，最大风险项）⑤ Canvas 与主对话的状态打通
+- **已做（2026-09-14）**：可靠投递、配置脱敏、bash 默认关、结论-证据落库、中途纠偏。研究默认协议：隔离检索 → 对质评审 → 引文对齐 → 放行终稿。查论文走 Semantic Scholar（`search_papers` / `GET /api/research/papers`），Tavily 只负责网页/新闻。
+- **路线**：同一批真实研究问题对比单 Agent / 协调者少量研究 Agent / 自由 Swarm；Semantic Scholar 元数据仍为 best-effort；Canvas 与主对话状态打通。
 - 验收方法论：任何新开发先写 `.dev/acceptance-*.md` 契约（可证伪检查项）+ check 脚本（出数字），implementer 实现、validator 独立验收

@@ -62,6 +62,59 @@ async function emitDbWrite(input: {
   }
 }
 
+type P2PGroupRow = {
+  id: UUID;
+  name: string | null;
+  createdAt: Date;
+  lastMessageTime: Date | null;
+};
+
+function pickPreferredP2P(rows: P2PGroupRow[], preferred: string | null): P2PGroupRow | null {
+  if (rows.length === 0) return null;
+  const sorted = [...rows];
+  sorted.sort((x, y) => {
+    const xName = x.name ?? null;
+    const yName = y.name ?? null;
+    const xMatch = preferred && xName === preferred ? 1 : 0;
+    const yMatch = preferred && yName === preferred ? 1 : 0;
+    if (xMatch !== yMatch) return yMatch - xMatch;
+
+    const xNamed = xName ? 1 : 0;
+    const yNamed = yName ? 1 : 0;
+    if (xNamed !== yNamed) return yNamed - xNamed;
+
+    const xUpdated = (x.lastMessageTime ?? x.createdAt).getTime();
+    const yUpdated = (y.lastMessageTime ?? y.createdAt).getTime();
+    if (xUpdated !== yUpdated) return yUpdated - xUpdated;
+
+    return y.createdAt.getTime() - x.createdAt.getTime();
+  });
+  return sorted[0] ?? null;
+}
+
+async function listExactP2PGroups(
+  db: { select: ReturnType<typeof getDb>["select"] },
+  input: { workspaceId: UUID; memberA: UUID; memberB: UUID }
+): Promise<P2PGroupRow[]> {
+  const a = input.memberA;
+  const b = input.memberB;
+  return db
+    .select({
+      id: groups.id,
+      name: groups.name,
+      createdAt: groups.createdAt,
+      lastMessageTime: dsql<Date | null>`max(${messages.sendTime})`,
+    })
+    .from(groups)
+    .innerJoin(groupMembers, eq(groupMembers.groupId, groups.id))
+    .leftJoin(messages, eq(messages.groupId, groups.id))
+    .where(eq(groups.workspaceId, input.workspaceId))
+    .groupBy(groups.id)
+    .having(
+      dsql`count(*) = 2 and sum(case when ${groupMembers.userId} = ${a} or ${groupMembers.userId} = ${b} then 1 else 0 end) = 2`
+    );
+}
+
 export const store = {
   async findLatestExactP2PGroupId(input: {
     workspaceId: UUID;
@@ -69,49 +122,11 @@ export const store = {
     memberB: UUID;
     preferredName?: string | null;
   }): Promise<UUID | null> {
-    const db = getDb();
     const a = input.memberA;
     const b = input.memberB;
     if (!a || !b || a === b) return null;
-
-    const rows = await db
-      .select({
-        id: groups.id,
-        name: groups.name,
-        createdAt: groups.createdAt,
-        lastMessageTime: dsql<Date | null>`max(${messages.sendTime})`,
-      })
-      .from(groups)
-      .innerJoin(groupMembers, eq(groupMembers.groupId, groups.id))
-      .leftJoin(messages, eq(messages.groupId, groups.id))
-      .where(eq(groups.workspaceId, input.workspaceId))
-      .groupBy(groups.id)
-      .having(
-        dsql`count(*) = 2 and sum(case when ${groupMembers.userId} = ${a} or ${groupMembers.userId} = ${b} then 1 else 0 end) = 2`
-      );
-
-    if (rows.length === 0) return null;
-
-    const preferred = (input.preferredName ?? null) || null;
-    rows.sort((x, y) => {
-      const xName = x.name ?? null;
-      const yName = y.name ?? null;
-      const xMatch = preferred && xName === preferred ? 1 : 0;
-      const yMatch = preferred && yName === preferred ? 1 : 0;
-      if (xMatch !== yMatch) return yMatch - xMatch;
-
-      const xNamed = xName ? 1 : 0;
-      const yNamed = yName ? 1 : 0;
-      if (xNamed !== yNamed) return yNamed - xNamed;
-
-      const xUpdated = (x.lastMessageTime ?? x.createdAt).getTime();
-      const yUpdated = (y.lastMessageTime ?? y.createdAt).getTime();
-      if (xUpdated !== yUpdated) return yUpdated - xUpdated;
-
-      return y.createdAt.getTime() - x.createdAt.getTime();
-    });
-
-    return rows[0]!.id;
+    const rows = await listExactP2PGroups(getDb(), { workspaceId: input.workspaceId, memberA: a, memberB: b });
+    return pickPreferredP2P(rows, input.preferredName ?? null)?.id ?? null;
   },
 
   async mergeDuplicateExactP2PGroups(input: {
@@ -128,46 +143,12 @@ export const store = {
     const createdAt = now();
 
     return await db.transaction(async (tx) => {
-      const rows = await tx
-        .select({
-          id: groups.id,
-          name: groups.name,
-          createdAt: groups.createdAt,
-          lastMessageTime: dsql<Date | null>`max(${messages.sendTime})`,
-        })
-        .from(groups)
-        .innerJoin(groupMembers, eq(groupMembers.groupId, groups.id))
-        .leftJoin(messages, eq(messages.groupId, groups.id))
-        .where(eq(groups.workspaceId, input.workspaceId))
-        .groupBy(groups.id)
-        .having(
-          dsql`count(*) = 2 and sum(case when ${groupMembers.userId} = ${a} or ${groupMembers.userId} = ${b} then 1 else 0 end) = 2`
-        );
-
+      const rows = await listExactP2PGroups(tx, {
+        workspaceId: input.workspaceId,
+        memberA: a,
+        memberB: b,
+      });
       const preferred = (input.preferredName ?? null) || null;
-
-      const pickBest = (candidates: typeof rows) => {
-        const sorted = [...candidates];
-        sorted.sort((x, y) => {
-          const xName = x.name ?? null;
-          const yName = y.name ?? null;
-          const xMatch = preferred && xName === preferred ? 1 : 0;
-          const yMatch = preferred && yName === preferred ? 1 : 0;
-          if (xMatch !== yMatch) return yMatch - xMatch;
-
-          const xNamed = xName ? 1 : 0;
-          const yNamed = yName ? 1 : 0;
-          if (xNamed !== yNamed) return yNamed - xNamed;
-
-          const xUpdated = (x.lastMessageTime ?? x.createdAt).getTime();
-          const yUpdated = (y.lastMessageTime ?? y.createdAt).getTime();
-          if (xUpdated !== yUpdated) return yUpdated - xUpdated;
-
-          return y.createdAt.getTime() - x.createdAt.getTime();
-        });
-        return sorted[0]!;
-      };
-
       let keepId: UUID | null = null;
 
       if (rows.length === 0) {
@@ -185,7 +166,8 @@ export const store = {
         return keepId;
       }
 
-      const best = pickBest(rows);
+      const best = pickPreferredP2P(rows, preferred);
+      if (!best) return null;
       keepId = best.id;
 
       const others = rows.filter((r) => r.id !== keepId).map((r) => r.id);
@@ -972,7 +954,10 @@ export const store = {
   > {
     const db = getDb();
     const memberships = await db
-      .select({ groupId: groupMembers.groupId, lastReadMessageId: groupMembers.lastReadMessageId })
+      .select({
+        groupId: groupMembers.groupId,
+        lastProcessedMessageId: groupMembers.lastProcessedMessageId,
+      })
       .from(groupMembers)
       .where(eq(groupMembers.userId, input.agentId));
 
@@ -980,11 +965,11 @@ export const store = {
 
     for (const m of memberships) {
       let cutoff = new Date(0);
-      if (m.lastReadMessageId) {
+      if (m.lastProcessedMessageId) {
         const last = await db
           .select({ sendTime: messages.sendTime })
           .from(messages)
-          .where(eq(messages.id, m.lastReadMessageId))
+          .where(eq(messages.id, m.lastProcessedMessageId))
           .limit(1);
         cutoff = last[0]?.sendTime ?? cutoff;
       }

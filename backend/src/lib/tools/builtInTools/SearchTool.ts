@@ -98,7 +98,7 @@ function parseSearchResults(content: string): WebSearchResult[] {
 const SearchToolDef = buildTool({
   name: "web_search",
   description:
-    "Search the web (Tavily via MCP) for pages and academic literature. Use whenever the user asks to research a topic, find papers/references, or needs up-to-date web information. Returns structured results [{title, url, snippet}] and records each result as a citation.",
+    "Search the open web via Tavily (MCP). For news and non-academic pages. For papers use search_papers.",
   inputSchema: SearchToolSchema,
   outputSchema: z.any(),
   isReadOnly: () => true,
@@ -133,7 +133,10 @@ const SearchToolDef = buildTool({
 
       const results = parseSearchResults(callResult.content ?? "").slice(0, maxResults);
       const agentId = options?.context?.agentId || "anonymous";
-      const citations = recordSearchCitations(agentId, query, results);
+      const citations = await recordSearchCitations(agentId, query, results, {
+        workspaceId: options?.context?.workspaceId,
+        groupId: (options?.context as { groupId?: string } | undefined)?.groupId,
+      });
 
       return successResult({
         query,

@@ -11,6 +11,7 @@ import { mermaid } from "@streamdown/mermaid";
 import { IMShell } from "./IMShell";
 import { IMMessageList } from "./IMMessageList";
 import { PixelAgentGraph } from "./PixelAgentGraph";
+import { ResearchBriefing } from "./ResearchBriefing";
 import { PixelHeader } from "./PixelHeader";
 import { PixelNavSidebar } from "./PixelNavSidebar";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
@@ -74,12 +75,17 @@ type AppSettings = {
   arkApiKey?: string;
   arkBaseUrl?: string;
   arkModel?: string;
+  arkApiKeyConfigured?: boolean;
   openRouterApiKey?: string;
   openRouterBaseUrl?: string;
   openRouterModel?: string;
+  openRouterApiKeyConfigured?: boolean;
   minimaxApiKey?: string;
   minimaxBaseUrl?: string;
   minimaxModel?: string;
+  minimaxApiKeyConfigured?: boolean;
+  allowHostBash?: boolean;
+  researchMaxAgents?: number;
 };
 
 type UiStreamEvent = {
@@ -228,6 +234,8 @@ function IMPageInner() {
   const [status, setStatus] = useState<"boot" | "groups" | "messages" | "send" | "idle">("boot");
   const [error, setError] = useState<string | null>(null);
   const [stoppingAgents, setStoppingAgents] = useState(false);
+  const [researchTick, setResearchTick] = useState(0);
+  const [workspaceList, setWorkspaceList] = useState<Array<{ id: string; name: string }>>([]);
 
   const [contentStream, setContentStream] = useState("");
   const [reasoningStream, setReasoningStream] = useState("");
@@ -1140,6 +1148,9 @@ function IMPageInner() {
     if (!session) return;
     void refreshGroups(session).catch((e) => setError(e instanceof Error ? e.message : String(e)));
     void refreshAgents(session).catch((e) => setError(e instanceof Error ? e.message : String(e)));
+    void api<{ workspaces: Array<{ id: string; name: string }> }>("/api/workspaces")
+      .then((data) => setWorkspaceList(data.workspaces ?? []))
+      .catch(() => undefined);
   }, [refreshGroups, session]);
 
   useEffect(() => {
@@ -1157,7 +1168,9 @@ function IMPageInner() {
         payload = null;
       }
       if (payload) {
-        if (payload.event === "ui.agent.created") {
+        if (payload.event === "ui.research.updated") {
+          setResearchTick((n) => n + 1);
+        } else if (payload.event === "ui.agent.created") {
           const role = payload.data?.agent?.role ?? "agent";
           const agentId = payload.data?.agent?.id as UUID | undefined;
           const parentId = payload.data?.agent?.parentId as UUID | null | undefined;
@@ -1749,14 +1762,19 @@ function IMPageInner() {
           />
         )}
         {viewMode !== "canvas" && (
-          <WorkspaceSwitcher 
-          currentWorkspace="SWARM_001"
-          workspaces={[
-            { id: "1", name: "SWARM_001" },
-            { id: "2", name: "PROJECT_B" },
-          ]}
-          onWorkspaceChange={(id) => console.log("Switch to:", id)}
-          onCreateWorkspace={() => console.log("Create workspace")}
+          <WorkspaceSwitcher
+          currentWorkspace={workspaceList.find((w) => w.id === session?.workspaceId)?.name ?? session?.workspaceId ?? ""}
+          workspaces={workspaceList}
+          onWorkspaceChange={(id) => {
+            window.location.href = `/im?workspaceId=${encodeURIComponent(id)}`;
+          }}
+          onCreateWorkspace={async () => {
+            const created = await api<WorkspaceDefaults>("/api/workspaces", {
+              method: "POST",
+              body: JSON.stringify({ name: `Workspace ${workspaceList.length + 1}` }),
+            });
+            window.location.href = `/im?workspaceId=${encodeURIComponent(created.workspaceId)}`;
+          }}
         />
         )}
         <div className="header">
@@ -2302,17 +2320,26 @@ function IMPageInner() {
       }
       right={
         <>
-          <PixelAgentGraph
-            agents={agents.map(a => ({
-              id: a.id,
-              name: a.role,
-              role: a.role,
-              status: agentStatusById[a.id] === "BUSY" ? "running" : 
-                     agentStatusById[a.id] === "WAKING" ? "thinking" : 
-                     a.role === "human" ? "idle" : "offline",
-              parentId: a.parentId ?? undefined,
-            }))}
-            onAgentClick={(id) => console.log("Agent clicked:", id)}
+          <ResearchBriefing
+            groupId={activeGroupId}
+            workspaceId={session?.workspaceId ?? null}
+            humanAgentId={session?.humanAgentId ?? null}
+            refreshToken={researchTick}
+            topology={
+              <PixelAgentGraph
+                compact
+                agents={agents.map(a => ({
+                  id: a.id,
+                  name: a.role,
+                  role: a.role,
+                  status: agentStatusById[a.id] === "BUSY" ? "running" :
+                         agentStatusById[a.id] === "WAKING" ? "thinking" :
+                         a.role === "human" ? "idle" : "offline",
+                  parentId: a.parentId ?? undefined,
+                }))}
+                onAgentClick={(id) => console.log("Agent clicked:", id)}
+              />
+            }
           />
           {isSettingsOpen && (
             <div className="modal-overlay" style={{ position: "fixed", inset: 0, background: "var(--ui-overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
@@ -2335,7 +2362,7 @@ function IMPageInner() {
                   <>
                     <div style={{ marginBottom: 12 }}>
                       <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.apiKey}</label>
-                      <input className="input" type="password" placeholder={t.arkApiKeyPlaceholder} value={appSettings?.arkApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, arkApiKey: e.target.value })} />
+                      <input className="input" type="password" placeholder={appSettings?.arkApiKeyConfigured ? t.apiKeyConfigured : t.arkApiKeyPlaceholder} value={appSettings?.arkApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, arkApiKey: e.target.value })} autoComplete="off" />
                     </div>
                     <div style={{ marginBottom: 12 }}>
                       <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.model}</label>
@@ -2347,7 +2374,7 @@ function IMPageInner() {
                   <>
                     <div style={{ marginBottom: 12 }}>
                       <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.apiKey}</label>
-                      <input className="input" type="password" placeholder={t.openRouterApiKeyPlaceholder} value={appSettings?.openRouterApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, openRouterApiKey: e.target.value })} />
+                      <input className="input" type="password" placeholder={appSettings?.openRouterApiKeyConfigured ? t.apiKeyConfigured : t.openRouterApiKeyPlaceholder} value={appSettings?.openRouterApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, openRouterApiKey: e.target.value })} autoComplete="off" />
                     </div>
                     <div style={{ marginBottom: 12 }}>
                       <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.model}</label>
@@ -2359,7 +2386,7 @@ function IMPageInner() {
                   <>
                     <div style={{ marginBottom: 12 }}>
                       <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.apiKey}</label>
-                      <input className="input" type="password" placeholder={t.minimaxApiKeyPlaceholder} value={appSettings?.minimaxApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, minimaxApiKey: e.target.value })} />
+                      <input className="input" type="password" placeholder={appSettings?.minimaxApiKeyConfigured ? t.apiKeyConfigured : t.minimaxApiKeyPlaceholder} value={appSettings?.minimaxApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, minimaxApiKey: e.target.value })} autoComplete="off" />
                     </div>
                     <div style={{ marginBottom: 12 }}>
                       <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.model}</label>
@@ -2367,6 +2394,22 @@ function IMPageInner() {
                     </div>
                   </>
                 )}
+                <div style={{ marginBottom: 12, marginTop: 8 }}>
+                  <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--ink)" }}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(appSettings?.allowHostBash)}
+                      onChange={(e) => setAppSettings({ ...appSettings, allowHostBash: e.target.checked })}
+                      style={{ marginTop: 2 }}
+                    />
+                    <span>
+                      {t.allowHostBash}
+                      <span style={{ display: "block", marginTop: 4, fontSize: 12, color: "var(--ink-2)" }}>
+                        {t.allowHostBashHint}
+                      </span>
+                    </span>
+                  </label>
+                </div>
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 24 }}>
                   <button className="btn" onClick={() => setIsSettingsOpen(false)}>{t.cancel}</button>
                   <button className="btn btn-primary" onClick={() => handleSaveSettings(appSettings!)}>{t.saveChanges}</button>

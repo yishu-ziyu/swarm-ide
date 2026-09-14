@@ -18,6 +18,7 @@ export type CanUseToolFn = (toolName: string) => boolean;
 export interface ToolUseContext {
   workspaceId: string;
   agentId: string;
+  groupId?: string;
   messages: Array<{
     role: "user" | "assistant" | "system" | "tool";
     content: string;
@@ -87,6 +88,7 @@ export interface BaseToolDef {
   checkPermissions?: (input: any, context: ToolUseContext) => Promise<PermissionResult>;
   toAutoClassifierInput?: (input: any) => string;
   userFacingName?: () => string;
+  call?: (input: any, options: ToolCallOptions) => Promise<ToolResult>;
 }
 
 // ============================================================================
@@ -127,6 +129,7 @@ export function buildTool<D extends BaseToolDef>(def: D): BuiltTool {
 
     async call(args: any, options: ToolCallOptions): Promise<ToolResult> {
       const input = def.inputSchema.parse(args);
+      if (def.call) return def.call(input, options);
       return { success: true, data: input };
     },
 
