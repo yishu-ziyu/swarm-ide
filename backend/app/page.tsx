@@ -213,6 +213,7 @@ export default function HomePage() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [dbError, setDbError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showAdmin, setShowAdmin] = useState(false);
 
   const typedTitle = useTypingEffect("Swarm IDE", 120, 500);
   const typedSubtitle = useTypingEffect(t.mvpUI, 40, 1200);
@@ -558,23 +559,52 @@ export default function HomePage() {
           )}
         </motion.div>
 
-        {/* Admin Section */}
+        {/* Admin Section (Collapsed by default, developer only) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 3.2 }}
           style={{
-            background: "var(--ui-glass-subtle)",
-            border: `1px solid ${borderColor}`,
-            borderRadius: 20,
-            padding: 24,
-            marginTop: 40,
+            marginTop: 48,
           }}
         >
-          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 16, color: textSecondary }}>
-            {t.admin}
+          <div
+            style={{
+              background: "var(--ui-glass-subtle)",
+              border: `1px solid ${borderColor}`,
+              borderRadius: 16,
+              padding: "14px 18px",
+            }}
+          >
+            <div
+              onClick={() => setShowAdmin((prev) => !prev)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+                userSelect: "none",
+              }}
+            >
+              <span
+                style={{
+                  fontWeight: 500,
+                  fontSize: 13,
+                  color: textMuted,
+                }}
+              >
+                {t.admin} · {t.adminTip}
+              </span>
+              <span style={{ fontSize: 12, color: textMuted }}>
+                {showAdmin ? t.collapse : t.expand}
+              </span>
+            </div>
+            {showAdmin ? (
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${borderColor}` }}>
+                <ClearDbButton />
+              </div>
+            ) : null}
           </div>
-          <ClearDbButton />
         </motion.div>
       </div>
     </div>

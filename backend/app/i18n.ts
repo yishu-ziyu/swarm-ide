@@ -26,6 +26,7 @@ export interface Translations {
   workspaceNamePlaceholder: string;
   create: string;
   admin: string;
+  adminTip: string;
   resetDbAndRedis: string;
   resetting: string;
   workspaces: string;
@@ -222,6 +223,7 @@ const en: Translations = {
   workspaceNamePlaceholder: "Enter workspace name",
   create: "Create",
   admin: "Admin",
+  adminTip: "Developer options (data cleanup)",
   resetDbAndRedis: "Reset DB + Redis",
   resetting: "Resetting...",
   workspaces: "Workspaces",
@@ -418,6 +420,7 @@ const zh: Translations = {
   workspaceNamePlaceholder: "输入工作空间名称",
   create: "创建",
   admin: "管理",
+  adminTip: "开发调试选项（数据清理）",
   resetDbAndRedis: "重置数据库",
   resetting: "重置中...",
   workspaces: "工作空间",

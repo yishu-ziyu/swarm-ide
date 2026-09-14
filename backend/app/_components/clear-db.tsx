@@ -39,9 +39,9 @@ export default function ClearDbButton() {
         onClick={() => void onReset()}
         disabled={busy !== null}
         style={{
-          background: "rgba(239, 68, 68, 0.1)",
-          borderColor: "var(--error-color)",
-          color: "#ef4444",
+          background: "var(--ui-danger-bg)",
+          borderColor: "var(--ui-danger-deep)",
+          color: "var(--ui-danger-text)",
         }}
       >
         {busy === "reset" ? t.resetting : t.resetDbAndRedis}
