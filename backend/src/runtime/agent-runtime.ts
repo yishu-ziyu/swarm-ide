@@ -366,9 +366,15 @@ function normalizeOpenRouterUrl(value: string) {
   return value;
 }
 
+function isValidApiKey(key?: string): boolean {
+  if (!key) return false;
+  const trimmed = key.trim();
+  return Boolean(trimmed && !trimmed.includes("YOUR_") && !trimmed.includes("your-api-key"));
+}
+
 function getOpenRouterConfig() {
   const config = getConfig();
-  const apiKey = config.openRouterApiKey ?? process.env.OPENROUTER_API_KEY ?? "";
+  const apiKey = (isValidApiKey(config.openRouterApiKey) ? config.openRouterApiKey : null) ?? process.env.OPENROUTER_API_KEY ?? "";
   const baseUrl = normalizeOpenRouterUrl(
     config.openRouterBaseUrl ?? process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1/chat/completions"
   );
@@ -385,7 +391,7 @@ function getOpenRouterConfig() {
 
 function getArkConfig() {
   const config = getConfig();
-  const apiKey = config.arkApiKey ?? process.env.ARK_API_KEY ?? "";
+  const apiKey = (isValidApiKey(config.arkApiKey) ? config.arkApiKey : null) ?? process.env.ARK_API_KEY ?? "";
   const baseUrl = config.arkBaseUrl ?? process.env.ARK_BASE_URL ?? "https://ark.cn-beijing.volces.com/api/coding/v3";
   const model = config.arkModel ?? process.env.ARK_MODEL ?? "kimi-k2.5";
 
@@ -571,7 +577,7 @@ class AgentRunner {
       await store.markGroupReadToMessage({ groupId, readerId: this.agentId, messageId: lastId });
     }
 
-    const { assistantText, assistantThinking, didSend } = await this.runWithTools({
+    const { assistantText, assistantThinking, didSend: firstDidSend } = await this.runWithTools({
       groupId,
       workspaceId,
       history,
@@ -582,6 +588,8 @@ class AgentRunner {
       content: assistantText,
       reasoning_content: assistantThinking || undefined,
     });
+
+    let didSend = firstDidSend;
 
     if (!didSend && !this.interruptRequested) {
       history.push({
@@ -596,11 +604,39 @@ class AgentRunner {
         history,
       });
 
+      if (followup.didSend) {
+        didSend = true;
+      }
+
       history.push({
         role: "assistant",
         content: followup.assistantText,
         reasoning_content: followup.assistantThinking || undefined,
       });
+
+      // 兜底：如果模型未显式调用 send_*，但回复了文本（且不是“无需发送”），自动将回复投递到当前群组
+      if (!didSend && !this.interruptRequested) {
+        const fallbackText = (followup.assistantText || assistantText || "").trim();
+        if (fallbackText && fallbackText !== "无需发送") {
+          const members = await store.listGroupMemberIds({ groupId });
+          const result = await store.sendMessage({
+            groupId,
+            senderId: this.agentId,
+            content: fallbackText,
+            contentType: "text",
+          });
+          getWorkspaceUIBus().emit(workspaceId, {
+            event: "ui.message.created",
+            data: {
+              workspaceId,
+              groupId,
+              memberIds: members,
+              message: { id: result.id, senderId: this.agentId, sendTime: result.sendTime },
+            },
+          });
+          didSend = true;
+        }
+      }
     }
     await store.setAgentHistory({
       agentId: this.agentId,
@@ -1458,7 +1494,7 @@ class AgentRunner {
   ) {
     const { apiKey, baseUrl, model } = (() => {
       const config = getConfig();
-      const apiKey = config.minimaxApiKey ?? process.env.MINIMAX_API_KEY ?? "";
+      const apiKey = (isValidApiKey(config.minimaxApiKey) ? config.minimaxApiKey : null) ?? process.env.MINIMAX_API_KEY ?? "";
       const baseUrl =
         config.minimaxBaseUrl ??
         process.env.MINIMAX_BASE_URL ??
@@ -1510,6 +1546,13 @@ class AgentRunner {
     if (!upstream.ok || !upstream.body) {
       const text = await upstream.text().catch(() => "");
       throw new Error(`MiniMax upstream error: ${upstream.status} ${text}`);
+    }
+
+    const contentType = upstream.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      const errJson = (await upstream.json().catch(() => null)) as any;
+      const msg = errJson?.base_resp?.status_msg || errJson?.message || JSON.stringify(errJson);
+      throw new Error(`MiniMax upstream error: ${msg}`);
     }
 
     const assembler = new OpenAIStreamAssembler();

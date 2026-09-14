@@ -54,12 +54,11 @@ function cleanEnv(env: NodeJS.ProcessEnv): Record<string, string> {
   return out;
 }
 
-// mcp.json 中的 env 值支持 "${ENV_VAR}" 形式引用进程环境变量（密钥不出库）。
+// mcp.json 中的 env / headers 值支持 "${ENV_VAR}" 或内嵌 "${ENV_VAR}" 形式引用进程环境变量（密钥不出库）。
 function resolveEnv(env: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [key, value] of Object.entries(env)) {
-    const match = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/.exec(value.trim());
-    out[key] = match ? (process.env[match[1]] ?? "") : value;
+    out[key] = value.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (_match, name: string) => process.env[name] ?? "");
   }
   return out;
 }
@@ -288,7 +287,7 @@ class McpRegistry {
         throw new Error(`Missing MCP url for server: ${name}`);
       })();
 
-    const requestInit = server.headers ? { headers: server.headers } : undefined;
+    const requestInit = server.headers ? { headers: resolveEnv(server.headers) } : undefined;
 
     if (server.type === "sse" || server.sseUrl) {
       const transport = new SSEClientTransport(new URL(url), { requestInit });

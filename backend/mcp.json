@@ -36,7 +36,11 @@
         },
         "PrimeMatrixData-http": {
             "type": "http",
-            "url": "https://mcp.yidian.cn/mcp/16d05fda79166fdc7e1a0c5a8584ad5d"
+            "url": "https://mcp.yidian.cn/mcp/16d05fda79166fdc7e1a0c5a8584ad5d",
+            "headers": {
+                "Authorization": "Bearer ${MINIMAX_API_KEY}"
+            },
+            "disabled": true
         }
     }
 }
