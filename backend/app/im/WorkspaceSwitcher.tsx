@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLanguage } from "../_components/LanguageContext";
+import { ChevronsUpDown, Check, Folder, Plus } from "lucide-react";
 
 type Workspace = {
   id: string;
@@ -33,9 +34,7 @@ export function WorkspaceSwitcher({
         <span className="font-mono text-xs text-ink font-bold">
           {currentWorkspace}
         </span>
-        <span className="material-symbols-outlined text-sm text-ink-2">
-          {isOpen ? "swap_vert" : "swap_vert"}
-        </span>
+        <ChevronsUpDown size={14} className="text-ink-2" />
       </button>
 
       {/* Dropdown */}
@@ -64,9 +63,11 @@ export function WorkspaceSwitcher({
                   setIsOpen(false);
                 }}
               >
-                <span className="material-symbols-outlined text-sm">
-                  {ws.name === currentWorkspace ? "check" : "folder"}
-                </span>
+                {ws.name === currentWorkspace ? (
+                  <Check size={14} />
+                ) : (
+                  <Folder size={14} />
+                )}
                 <span className="font-mono text-xs">
                   {ws.name}
                 </span>
@@ -84,7 +85,7 @@ export function WorkspaceSwitcher({
                 setIsOpen(false);
               }}
             >
-              <span className="material-symbols-outlined text-sm">add</span>
+              <Plus size={14} />
               <span className="font-mono text-xs">
                 {t.createWorkspace}
               </span>
