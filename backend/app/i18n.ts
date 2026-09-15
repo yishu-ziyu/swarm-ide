@@ -106,6 +106,8 @@ export interface Translations {
   // Settings modal
   llmProviderSettings: string;
   failedToSaveSettings: string;
+  settingsSaved: string;
+  savingSettings: string;
   subAgentRole: string;
   cancel: string;
   saveChanges: string;
@@ -316,7 +318,7 @@ const en: Translations = {
   loading: "Loading...",
 
   // IM panels
-  llmHistory: "LLM History",
+  llmHistory: "Chat History",
   realtimeContent: "Realtime Content",
   realtimeReasoning: "Realtime Reasoning",
   realtimeTools: "Realtime Tools",
@@ -335,8 +337,10 @@ const en: Translations = {
   streamingFrom: "Streaming from:",
 
   // Settings modal
-  llmProviderSettings: "LLM Provider Settings",
+  llmProviderSettings: "AI Model Settings",
   failedToSaveSettings: "Failed to save settings",
+  settingsSaved: "Settings saved",
+  savingSettings: "Saving…",
   subAgentRole: "Sub-agent role",
   cancel: "Cancel",
   saveChanges: "Save Changes",
@@ -421,8 +425,8 @@ const en: Translations = {
   usageCreateRole: "Usage: /create <role>",
   vizCreated: "Created",
   vizMessage: "Message",
-  llmStart: "LLM started",
-  llmEnd: "LLM finished",
+  llmStart: "AI started",
+  llmEnd: "AI finished",
   toolStart: "Tool started",
   toolEnd: "Tool finished",
   stopAllAgentsEvent: "Stop All Agents",
@@ -432,8 +436,8 @@ const en: Translations = {
   openRouterApiKeyPlaceholder: "OpenRouter API Key",
   minimaxApiKeyPlaceholder: "MiniMax API Key",
   apiKeyConfigured: "Configured — enter a new key to replace",
-  allowHostBash: "Allow host shell (bash)",
-  allowHostBashHint: "Off by default. Research agents cannot run host commands until you enable this.",
+  allowHostBash: "Allow running local terminal commands",
+  allowHostBashHint: "Off by default. Research agents cannot run commands on your computer until you enable this.",
   researchBriefing: "Research",
   researchQuestion: "Question",
   researchPlan: "Current plan",
@@ -547,7 +551,7 @@ const zh: Translations = {
   loading: "加载中...",
 
   // IM panels
-  llmHistory: "LLM 历史",
+  llmHistory: "对话历史",
   realtimeContent: "实时内容",
   realtimeReasoning: "实时推理",
   realtimeTools: "实时工具",
@@ -566,8 +570,10 @@ const zh: Translations = {
   streamingFrom: "正在接收:",
 
   // Settings modal
-  llmProviderSettings: "LLM 提供商设置",
+  llmProviderSettings: "AI 模型设置",
   failedToSaveSettings: "保存设置失败",
+  settingsSaved: "已保存",
+  savingSettings: "保存中…",
   subAgentRole: "子智能体角色",
   cancel: "取消",
   saveChanges: "保存更改",
@@ -652,8 +658,8 @@ const zh: Translations = {
   usageCreateRole: "用法：/create <角色>",
   vizCreated: "创建",
   vizMessage: "消息",
-  llmStart: "LLM 开始",
-  llmEnd: "LLM 结束",
+  llmStart: "AI 开始",
+  llmEnd: "AI 完成",
   toolStart: "工具开始",
   toolEnd: "工具结束",
   stopAllAgentsEvent: "停止全部 Agent",
@@ -663,8 +669,8 @@ const zh: Translations = {
   openRouterApiKeyPlaceholder: "OpenRouter API 密钥",
   minimaxApiKeyPlaceholder: "MiniMax API 密钥",
   apiKeyConfigured: "已配置，输入新密钥以替换",
-  allowHostBash: "允许宿主机 shell（bash）",
-  allowHostBashHint: "默认关闭。未开启前，研究 Agent 不能执行宿主机命令。",
+  allowHostBash: "允许在本机运行终端命令",
+  allowHostBashHint: "默认关闭。未开启前，研究助手不会在你的电脑上执行任何命令。",
   researchBriefing: "研究",
   researchQuestion: "研究问题",
   researchPlan: "当前计划",

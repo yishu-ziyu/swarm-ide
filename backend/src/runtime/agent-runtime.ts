@@ -8,7 +8,7 @@ import { getMcpRegistry } from "./mcp";
 import { appendAgentHistorySnapshot, appendAgentLlmRequestRaw, appendAgentStreamEvent } from "./agent-logger";
 import { formatSkillPrompt, getSkillLoader } from "./skill-loader";
 import { getConfig, isHostBashAllowed } from "@/lib/config";
-import { didSendSucceed } from "./delivery";
+import { composeHumanVisibleReply, didSendSucceed } from "./delivery";
 import { builtinToolHandlers } from "./builtin-tools";
 import { processingStore } from "./processing-store";
 import { formatResearchContext, researchStore } from "../research/research-store";
@@ -805,7 +805,7 @@ class AgentRunner {
         history.push({
           role: "user",
           content:
-            "Reminder: 本轮未调用 send_*。先判断是否需要对外可见；需要时使用 send_group_message 或 send_direct_message，无需时可不发送。",
+            "Reminder: 本轮还没有在聊天里开口。这个群里有人在看。你必须调用 send_group_message，用两三句话说明查到了什么、目前结论、下一步。不要回复「无需发送」。",
         });
 
         const followup = await this.runWithTools({
@@ -826,8 +826,16 @@ class AgentRunner {
         });
 
         if (!didSend && !this.interruptRequested) {
-          const fallbackText = (followup.assistantText || assistantText || "").trim();
-          if (fallbackText && fallbackText !== "无需发送") {
+          let fallbackText = (followup.assistantText || assistantText || "").trim();
+          if (!fallbackText || fallbackText === "无需发送") {
+            const briefing = research ? await researchStore.getBriefing({ groupId }) : null;
+            fallbackText = composeHumanVisibleReply({
+              assistantText: "",
+              claims: briefing?.currentConclusions,
+              papers: briefing?.papers,
+            });
+          }
+          if (fallbackText) {
             const members = await store.listGroupMemberIds({ groupId });
             const blocked = await this.researchSendGate({ groupId, memberIds: members });
             if (!blocked) {

@@ -66,6 +66,15 @@ export async function lookupSemanticScholar(input: {
     };
     const paper = body.data?.[0];
     if (!paper) return null;
+
+    // Guard: only accept if the returned title substantially overlaps with our query.
+    // Prevents accepting a wrong match that would assign a wrong year/authors.
+    const norm = (s: string) => s.toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
+    const queryWords = norm(title).split(" ").filter((w) => w.length > 3);
+    const returnedNorm = norm(paper.title ?? "");
+    const overlap = queryWords.filter((w) => returnedNorm.includes(w)).length;
+    if (queryWords.length > 0 && overlap / queryWords.length < 0.5) return null;
+
     const authors = (paper.authors ?? []).map((a) => (a.name ?? "").trim()).filter(Boolean);
     const year = typeof paper.year === "number" ? paper.year : null;
     if (authors.length === 0 && year == null) return null;

@@ -27,3 +27,7 @@ global_state.txt
 
 # 浏览器工具会话残留（含本地会话 token）
 .gstack/
+
+# local tooling residue
+.statamcp/
+backend/.video_agent/

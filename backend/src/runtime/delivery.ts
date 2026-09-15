@@ -41,3 +41,34 @@ export function sendIdempotencyKey(input: {
 export function fallbackIdempotencyKey(runId: string, groupId: string): string {
   return sendIdempotencyKey({ runId, toolName: "fallback_send", target: groupId });
 }
+
+/** Visible chat text when the model only ran tools and left content empty. */
+export function composeHumanVisibleReply(input: {
+  assistantText?: string;
+  claims?: Array<{ statement?: string | null }>;
+  papers?: Array<{ title?: string | null; sourceTitle?: string | null }>;
+}): string {
+  const spoken = (input.assistantText ?? "").trim();
+  if (spoken && spoken !== "无需发送") return spoken;
+
+  const claims = (input.claims ?? [])
+    .map((claim) => (claim.statement ?? "").trim())
+    .filter(Boolean)
+    .slice(0, 3);
+  if (claims.length > 0) {
+    return ["这一轮查完了，目前结论：", ...claims.map((line) => `- ${line}`)].join("\n");
+  }
+
+  const titles = [
+    ...new Set(
+      (input.papers ?? [])
+        .map((paper) => (paper.title ?? paper.sourceTitle ?? "").trim())
+        .filter(Boolean)
+    ),
+  ].slice(0, 3);
+  if (titles.length > 0) {
+    return `这一轮已检索到论文：${titles.join("；")}。详情在右侧研究栏。`;
+  }
+
+  return "这一轮已经处理完，进展写在右侧研究栏。";
+}

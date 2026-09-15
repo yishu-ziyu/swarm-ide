@@ -119,7 +119,7 @@ export function PixelNavSidebar({
                 cursor: "pointer",
                 fontSize: 12,
                 fontWeight: isActive ? 600 : 500,
-                fontFamily: '"JetBrains Mono", monospace',
+                fontFamily: '"JetBrains Mono", "PingFang SC", "Noto Sans SC", monospace',
                 textTransform: "uppercase",
                 letterSpacing: "0.03em",
                 transition: "all 0.2s",
@@ -127,10 +127,6 @@ export function PixelNavSidebar({
               }}
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                if (item.id === "logs") {
-                  window.location.href = "/dev-dashboard";
-                  return;
-                }
                 onNavChange?.(item.id);
               }}
               onMouseEnter={(e) => {
@@ -169,7 +165,7 @@ export function PixelNavSidebar({
             fontSize: 12,
             fontWeight: 600,
             cursor: "pointer",
-            fontFamily: '"JetBrains Mono", monospace',
+            fontFamily: '"JetBrains Mono", "PingFang SC", "Noto Sans SC", monospace',
             letterSpacing: "0.03em",
             boxShadow: "0 2px 8px var(--ui-accent-shadow)",
           }}
@@ -213,7 +209,7 @@ export function PixelNavSidebar({
               cursor: "pointer",
               transition: "all 0.2s",
               fontSize: 12,
-              fontFamily: '"JetBrains Mono", monospace',
+              fontFamily: '"JetBrains Mono", "PingFang SC", "Noto Sans SC", monospace',
               letterSpacing: "0.03em",
               textTransform: "uppercase",
             }}

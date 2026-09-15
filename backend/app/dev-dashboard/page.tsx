@@ -178,46 +178,27 @@ function ProgressBar({ phase }: { phase: Phase }) {
 
 export default function DevDashboard() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [fileTree, setFileTree] = useState<FileNode>({
+  const [fileTree] = useState<FileNode>({
     name: "src",
     path: "src",
     type: "directory",
     children: [
-      {
-        name: "lib",
-        path: "src/lib",
-        type: "directory",
-        children: [
-          { name: "tools", path: "src/lib/tools", type: "directory", children: [
-            { name: "Tool.ts", path: "src/lib/tools/Tool.ts", type: "file" },
-            { name: "registry.ts", path: "src/lib/tools/registry.ts", type: "file" },
-            { name: "builtInTools/", path: "src/lib/tools/builtInTools", type: "directory", children: [
-              { name: "AgentTool.ts", path: "src/lib/tools/AgentTool.ts", type: "file" },
-              { name: "BashTool.ts", path: "src/lib/tools/BashTool.ts", type: "file" },
-              { name: "FileReadTool.ts", path: "src/lib/tools/FileReadTool.ts", type: "file" },
-              { name: "FileWriteTool.ts", path: "src/lib/tools/FileWriteTool.ts", type: "file" },
-              { name: "SearchTool.ts", path: "src/lib/tools/SearchTool.ts", type: "file" },
-              { name: "GlobTool.ts", path: "src/lib/tools/GlobTool.ts", type: "file" },
-              { name: "TaskTool.ts", path: "src/lib/tools/TaskTool.ts", type: "file" },
-              { name: "index.ts", path: "src/lib/tools/index.ts", type: "file" },
-            ]},
-          ]},
-          { name: "agents", path: "src/lib/agents", type: "directory", children: [
-            { name: "AgentContext.ts", path: "src/lib/agents/AgentContext.ts", type: "file" },
-            { name: "AgentRunner.ts", path: "src/lib/agents/AgentRunner.ts", type: "file" },
-            { name: "AgentManager.ts", path: "src/lib/agents/AgentManager.ts", type: "file" },
-            { name: "index.ts", path: "src/lib/agents/index.ts", type: "file" },
-          ]},
-          { name: "dev-logger.ts", path: "src/lib/dev-logger.ts", type: "file" },
-        ],
-      },
-      { name: "app", path: "src/app", type: "directory", children: [
-        { name: "api/dev-logs/", path: "src/app/api/dev-logs", type: "directory", children: [
-          { name: "route.ts", path: "src/app/api/dev-logs/route.ts", type: "file" },
-        ]},
-        { name: "dev-dashboard/", path: "src/app/dev-dashboard", type: "directory", children: [
-          { name: "page.tsx", path: "src/app/dev-dashboard/page.tsx", type: "file" },
-        ]},
+      { name: "db/", path: "src/db", type: "directory", children: [
+        { name: "schema.ts", path: "src/db/schema.ts", type: "file" },
+      ]},
+      { name: "lib/", path: "src/lib", type: "directory", children: [
+        { name: "config.ts", path: "src/lib/config.ts", type: "file" },
+        { name: "storage.ts", path: "src/lib/storage.ts", type: "file" },
+      ]},
+      { name: "research/", path: "src/research", type: "directory", children: [
+        { name: "paper-search.ts", path: "src/research/paper-search.ts", type: "file" },
+        { name: "research-store.ts", path: "src/research/research-store.ts", type: "file" },
+        { name: "research-runtime.ts", path: "src/research/research-runtime.ts", type: "file" },
+      ]},
+      { name: "runtime/", path: "src/runtime", type: "directory", children: [
+        { name: "agent-runtime.ts", path: "src/runtime/agent-runtime.ts", type: "file" },
+        { name: "delivery.ts", path: "src/runtime/delivery.ts", type: "file" },
+        { name: "builtin-tools.ts", path: "src/runtime/builtin-tools.ts", type: "file" },
       ]},
     ],
   });
@@ -290,6 +271,19 @@ export default function DevDashboard() {
           </h1>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <a
+            href="/im"
+            style={{
+              color: "#E8E8E8",
+              fontSize: "13px",
+              textDecoration: "none",
+              padding: "6px 12px",
+              border: "1px solid #444",
+              borderRadius: "8px",
+            }}
+          >
+            返回聊天
+          </a>
           <span style={{ fontSize: "12px", color: "var(--ink-3)" }}>
             最后更新: {lastUpdate || "连接中..."}
           </span>

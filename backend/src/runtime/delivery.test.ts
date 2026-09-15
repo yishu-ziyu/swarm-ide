@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  composeHumanVisibleReply,
   didSendSucceed,
   fallbackIdempotencyKey,
   isSendTool,
@@ -30,4 +31,21 @@ test("send target is taken from the matching argument, not from content", () => 
   assert.equal(sendTargetFromArgs("send_direct_message", { toAgentId: "a2" }), "a2");
   assert.equal(sendTargetFromArgs("send_group_message", { groupId: "g1" }), "g1");
   assert.equal(sendTargetFromArgs("send", { content: "hi" }), null);
+});
+
+test("fallback chat text prefers spoken words, then claims, then paper titles", () => {
+  assert.equal(composeHumanVisibleReply({ assistantText: "查到了，2017 年。" }), "查到了，2017 年。");
+  assert.equal(composeHumanVisibleReply({ assistantText: "无需发送" }).includes("研究栏"), true);
+  assert.match(
+    composeHumanVisibleReply({
+      claims: [{ statement: "论文于 2017 年发表。" }],
+    }),
+    /2017/
+  );
+  assert.match(
+    composeHumanVisibleReply({
+      papers: [{ title: "Attention Is All You Need" }],
+    }),
+    /Attention Is All You Need/
+  );
 });

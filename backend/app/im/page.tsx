@@ -2,26 +2,19 @@
 
 import { useSearchParams } from "next/navigation";
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, TouchEvent as ReactTouchEvent } from "react";
-import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Briefcase, ChevronDown, ChevronLeft, ChevronRight, Code2, Network, User } from "lucide-react";
+import { Briefcase, ChevronDown, ChevronRight, Code2, Network, User } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { createCodePlugin } from "@streamdown/code";
 import { mermaid } from "@streamdown/mermaid";
-import { IMShell } from "./IMShell";
+import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels";
 import { IMMessageList } from "./IMMessageList";
-import { PixelAgentGraph } from "./PixelAgentGraph";
-import { ResearchBriefing } from "./ResearchBriefing";
-import { PixelHeader } from "./PixelHeader";
-import { PixelNavSidebar } from "./PixelNavSidebar";
-import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
-
-// V2 Components - New UI Design
-import { PixelNavSidebarV2 } from "./PixelNavSidebarV2";
-import { PixelHeaderV2 } from "./PixelHeaderV2";
-import { CanvasView, type CanvasNode, type CanvasConnection } from "./CanvasView";
+import { ResearchWorkbench } from "./ResearchWorkbench";
+import { CommandPalette } from "./CommandPalette";
+import { SwarmGraph } from "./SwarmGraph";
+import { AgentTree } from "./AgentTree";
 import { useLanguage } from "../_components/LanguageContext";
-import LanguageSwitcher from "../_components/LanguageSwitcher";
 
 // Create code plugin with dark theme
 const code = createCodePlugin({
@@ -244,6 +237,8 @@ function IMPageInner() {
   const [agentError, setAgentError] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
+  const [settingsNotice, setSettingsNotice] = useState<string | null>(null);
+  const [settingsSaving, setSettingsSaving] = useState(false);
   const [vizEvents, setVizEvents] = useState<VizEvent[]>([]);
   const [vizBeams, setVizBeams] = useState<VizBeam[]>([]);
   const [vizSize, setVizSize] = useState({ width: 640, height: 260 });
@@ -281,7 +276,11 @@ function IMPageInner() {
   // View mode state for UI switching
   const [viewMode, setViewMode] = useState<"chat" | "canvas">("chat");
 
+  // Command palette
+  const [cmdOpen, setCmdOpen] = useState(false);
+
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const esRef = useRef<EventSource | null>(null);
   const activeGroupIdRef = useRef<string | null>(null);
   const streamAgentIdRef = useRef<string | null>(null);
@@ -722,6 +721,7 @@ function IMPageInner() {
   }, []);
 
   const handleSaveSettings = async (updates: AppSettings) => {
+    setSettingsSaving(true);
     try {
       const saved = await api<AppSettings>("/api/config", {
         method: "POST",
@@ -729,8 +729,12 @@ function IMPageInner() {
       });
       setAppSettings(saved);
       setIsSettingsOpen(false);
+      setSettingsNotice(t.settingsSaved);
+      window.setTimeout(() => setSettingsNotice(null), 2400);
     } catch (e) {
       alert(t.failedToSaveSettings + ": " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setSettingsSaving(false);
     }
   };
 
@@ -1621,6 +1625,40 @@ function IMPageInner() {
     setCollapsedAgents((prev) => ({ ...prev, [agentId]: !prev[agentId] }));
   }, []);
 
+  // ⌘K command palette
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCmdOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  const cmdItems = useMemo(() => {
+    const items: Array<{ id: string; label: string; description?: string; onSelect: () => void }> = [];
+    for (const row of agentTreeRows) {
+      if (row.group) {
+        items.push({
+          id: row.group.id,
+          label: getGroupLabel(row.group),
+          description: `Agent: ${row.agent.role}`,
+          onSelect: () => setActiveGroupId(row.group!.id),
+        });
+      }
+    }
+    for (const g of groups) {
+      if (!items.find((i) => i.id === g.id)) {
+        items.push({ id: g.id, label: getGroupLabel(g), description: "群组", onSelect: () => setActiveGroupId(g.id) });
+      }
+    }
+    items.push({ id: "__settings", label: "设置 / Settings", description: "LLM 配置", onSelect: () => setIsSettingsOpen(true) });
+    items.push({ id: "__workspace", label: "新建工作区", description: "Create Workspace", onSelect: () => void createWorkspace() });
+    return items;
+  }, [agentTreeRows, groups, getGroupLabel, createWorkspace]);
+
   const renderGroupRow = (
     g: Group,
     tree?: {
@@ -1730,711 +1768,464 @@ function IMPageInner() {
     );
   };
 
+  // ── render ────────────────────────────────────────────────────────────────
+  const wbFont = '"PingFang SC","苹方-简","Noto Sans SC",-apple-system,"SF Pro Text",sans-serif';
+
   return (
-    <IMShell
-      left={
-        viewMode === "canvas" ? (
-          <PixelNavSidebarV2 view="canvas" />
-        ) : (
-          <PixelNavSidebar
-            activeNav={activeNav}
-            onNavChange={setActiveNav}
-            onDeployAgent={() => {
-              setIsSettingsOpen(true);
+    <div
+      data-theme={theme}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        overflow: "hidden",
+        background: "var(--ui-bg)",
+        fontFamily: wbFont,
+        color: "var(--ink)",
+      }}
+    >
+      {/* ── Topbar ──────────────────────────────────────────────────────── */}
+      <div
+        style={{
+          height: 44,
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 12px",
+          borderBottom: "1px solid var(--ui-border-2)",
+          background: "var(--ui-topbar)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 6,
+              background: "rgba(14,165,233,0.12)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "1px solid rgba(14,165,233,0.25)",
             }}
-          />
-        )
-      }
-      mid={
-        <main className="panel panel-mid">
-        {viewMode === "canvas" ? (
-          <PixelHeaderV2
-            view="canvas"
-            onViewChange={setViewMode}
-            onSettings={() => setIsSettingsOpen(true)}
-          />
-        ) : (
-          <PixelHeader
-            title={t.workspaces}
-            isDark={theme === 'dark'}
-            onThemeToggle={toggleTheme}
-            onSettingsClick={() => setIsSettingsOpen(true)}
-          />
-        )}
-        {viewMode !== "canvas" && (
-          <WorkspaceSwitcher
-          currentWorkspace={workspaceList.find((w) => w.id === session?.workspaceId)?.name ?? session?.workspaceId ?? ""}
-          workspaces={workspaceList}
-          onWorkspaceChange={(id) => {
-            window.location.href = `/im?workspaceId=${encodeURIComponent(id)}`;
+          >
+            <Network size={13} color="#0ea5e9" />
+          </div>
+          <span style={{ fontWeight: 600, fontSize: 13 }}>Swarm IDE</span>
+          <span style={{ fontSize: 11, color: "var(--ui-muted)" }}>
+            {workspaceList.find((w) => w.id === session?.workspaceId)?.name ?? ""}
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <button
+            style={{
+              fontSize: 11,
+              color: "var(--ui-muted)",
+              background: "var(--ui-fill)",
+              border: "1px solid var(--ui-border-2)",
+              borderRadius: 6,
+              padding: "3px 8px",
+              cursor: "pointer",
+            }}
+            onClick={() => setCmdOpen(true)}
+            title="⌘K"
+          >
+            ⌘K
+          </button>
+          <button
+            className="btn"
+            style={{ padding: "3px 8px", fontSize: 11 }}
+            onClick={toggleTheme}
+            title={theme === "dark" ? "切换亮色" : "切换暗色"}
+          >
+            {theme === "dark" ? "☀" : "◐"}
+          </button>
+          <button
+            className="btn"
+            style={{ padding: "3px 7px" }}
+            title={t.settings}
+            onClick={() => setIsSettingsOpen(true)}
+          >
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+          <button
+            className="btn"
+            style={{
+              padding: "3px 8px",
+              fontSize: 11,
+              borderColor: "var(--ui-danger-deep)",
+              background: stoppingAgents ? "var(--ui-danger-bg-active)" : "var(--ui-danger-bg)",
+              color: "var(--ui-danger-text)",
+            }}
+            onClick={() => void onInterruptAllAgents()}
+            disabled={!session || stoppingAgents}
+          >
+            {stoppingAgents ? t.stoppingAgents : t.stopAllAgents}
+          </button>
+          <span className="muted" style={{ fontSize: 11 }}>
+            {status !== "idle" ? statusLabel[status] : ""}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Three-column body ────────────────────────────────────────────── */}
+      <PanelGroup orientation="horizontal" style={{ flex: 1, minHeight: 0, display: "flex" }}>
+
+        {/* LEFT: Agent tree */}
+        <Panel
+          defaultSize={18}
+          minSize={12}
+          maxSize={30}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            background: "var(--ui-shell)",
+            overflow: "hidden",
+            borderRight: "1px solid var(--ui-border-2)",
           }}
-          onCreateWorkspace={async () => {
-            const created = await api<WorkspaceDefaults>("/api/workspaces", {
-              method: "POST",
-              body: JSON.stringify({ name: `Workspace ${workspaceList.length + 1}` }),
-            });
-            window.location.href = `/im?workspaceId=${encodeURIComponent(created.workspaceId)}`;
-          }}
-        />
-        )}
-        <div className="header">
-          <div style={{ fontWeight: 700 }}>{title}</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        >
+          {/* Workspace selector */}
+          <div style={{ padding: "10px 10px 8px", borderBottom: "1px solid var(--ui-border-2)", flexShrink: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: "var(--ui-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>
+              工作区
+            </div>
+            <select
+              style={{
+                width: "100%",
+                fontSize: 12,
+                padding: "4px 6px",
+                background: "var(--ui-surface-2)",
+                color: "var(--ink)",
+                border: "1px solid var(--ui-border-2)",
+                borderRadius: 6,
+                cursor: "pointer",
+              }}
+              value={session?.workspaceId ?? ""}
+              onChange={(e) => { window.location.href = `/im?workspaceId=${encodeURIComponent(e.target.value)}`; }}
+            >
+              {workspaceList.map((w) => (
+                <option key={w.id} value={w.id}>{w.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Agent tree + extra groups */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
+            <div style={{ padding: "0 10px 4px", fontSize: 10, fontWeight: 600, color: "var(--ui-muted)", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>
+              Agent / 群组
+            </div>
+            <AgentTree
+              agents={agents
+                .filter((a) => a.role !== "human")
+                .map((a) => ({
+                  id: a.id,
+                  role: a.role,
+                  parentId: a.parentId,
+                  status: agentStatusById[a.id],
+                }))}
+              onSelect={(agentId) => {
+                const g = groupByAgentId.get(agentId);
+                if (g) setActiveGroupId(g.id);
+              }}
+              selectedId={(() => {
+                if (!activeGroupId || !session) return undefined;
+                const g = groups.find((gr) => gr.id === activeGroupId);
+                if (!g) return undefined;
+                return g.memberIds.find((id) => id !== session.humanAgentId);
+              })()}
+            />
+            {extraGroups.length > 0 && (
+              <div style={{ flexShrink: 0, overflowY: "auto", padding: "4px 0" }}>
+                {extraGroups.map((g) => renderGroupRow(g))}
+              </div>
+            )}
+          </div>
+
+          {/* Deploy */}
+          <div style={{ padding: "8px 10px", borderTop: "1px solid var(--ui-border-2)", flexShrink: 0 }}>
             <button
-              className="btn"
-              style={{ padding: "4px 8px" }}
-              title={t.settings}
+              style={{
+                width: "100%",
+                padding: "7px",
+                borderRadius: 7,
+                background: "#0ea5e9",
+                color: "white",
+                border: "none",
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: wbFont,
+              }}
               onClick={() => setIsSettingsOpen(true)}
             >
-              <svg className="w-3.5 h-3.5" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+              {t.deployAgent}
             </button>
-            <button
-              className="btn"
-              style={{
-                padding: "4px 10px",
-                fontSize: 12,
-                borderColor: "var(--ui-danger-deep)",
-                background: stoppingAgents ? "var(--ui-danger-bg-active)" : "var(--ui-danger-bg)",
-                color: "var(--ui-danger-text)",
-              }}
-              onClick={() => void onInterruptAllAgents()}
-              disabled={!session || stoppingAgents}
-              title={t.stoppingAgents}
-            >
-              {stoppingAgents ? t.stoppingAgents : t.stopAllAgents}
-            </button>
-            <div className="muted" style={{ fontSize: 12 }}>
-              {status !== "idle" ? statusLabel[status] : ""}
-            </div>
           </div>
-        </div>
+        </Panel>
 
-        {viewMode === "canvas" ? (
-          // Canvas View - Full screen canvas with agents
-          <CanvasView
-            nodes={agents.map((a): CanvasNode => ({
-              id: a.id,
-              type: a.role === "human" ? "master" : "live",
-              title: a.role,
-              description: agentStatusById[a.id] || "idle",
-              x: 200 + Math.random() * 400,
-              y: 150 + Math.random() * 300,
-            }))}
-            connections={vizBeams.map((b): CanvasConnection => ({
-              id: b.id,
-              from: b.fromId,
-              to: b.toId,
-              color: b.kind === "create" ? "var(--ui-canvas-green)" : "var(--ui-canvas-accent)",
-            }))}
-            onNodeClick={(id) => console.log("Node clicked:", id)}
-            chatGroupId={activeGroupId}
-            chatSenderId={session?.humanAgentId ?? null}
-          />
-        ) : (
-        <>
-        <div className="mid-stack" ref={midStackRef} style={{
-          gridTemplateRows: midStackHeight > 0
-            ? `${Math.max(0, Math.round(midChatHeight))}px ${MID_SPLITTER_SIZE}px minmax(${MID_GRAPH_MIN_HEIGHT}px, 1fr)`
-            : `1fr ${MID_SPLITTER_SIZE}px minmax(${MID_GRAPH_MIN_HEIGHT}px, 1fr)`
-        }}>
-          <div className="chat">
-            <IMMessageList
-              messages={messages}
-              humanAgentId={session?.humanAgentId ?? null}
-              agentRoleById={agentRoleById}
-              fmtTime={fmtTime}
-              renderContent={(content) => <MarkdownContent content={content} />}
-              cx={cx}
-            />
-            <div ref={bottomRef} />
-          </div>
+        <PanelResizeHandle
+          style={{
+            width: 4,
+            background: "transparent",
+            cursor: "col-resize",
+            flexShrink: 0,
+            borderLeft: "1px solid var(--ui-border-2)",
+            transition: "background 0.15s",
+          }}
+          
+        />
 
+        {/* MID: Chat or Topology */}
+        <Panel
+          minSize={30}
+          style={{ display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--ui-bg)" }}
+        >
+          {/* Mid sub-header */}
           <div
-            className="mid-resizer"
-            onPointerDown={handleMidResizeStart}
-            onMouseDown={handleMidMouseDown}
-            onTouchStart={handleMidTouchStart}
-          />
-
-          <div className="viz-shell">
-            <div
-              ref={vizRef}
-              className="viz-canvas"
-              style={{
-                position: "relative",
-                minHeight: 200,
-                borderTop: "1px solid var(--ui-canvas-border)",
-                background:
-                  "radial-gradient(circle at 20% 20%, var(--ui-canvas-glow-sky), transparent 40%), radial-gradient(circle at 80% 70%, var(--ui-canvas-glow-green), transparent 45%), linear-gradient(transparent 23px, var(--ui-canvas-grid) 24px), linear-gradient(90deg, transparent 23px, var(--ui-canvas-grid) 24px), var(--ui-canvas)",
-                backgroundSize: "24px 24px, 24px 24px, 24px 24px, 24px 24px, auto",
-                cursor: vizIsPanning ? "grabbing" : "grab",
-                overflow: "hidden",
-              }}
-              onMouseDown={(e) => {
-                if (e.button !== 0) return;
-                setVizIsPanning(true);
-                vizPanStartRef.current = { x: e.clientX, y: e.clientY, ox: vizOffset.x, oy: vizOffset.y };
-              }}
-              onMouseMove={(e) => {
-                if (!vizIsPanning || !vizPanStartRef.current) return;
-                const dx = e.clientX - vizPanStartRef.current.x;
-                const dy = e.clientY - vizPanStartRef.current.y;
-                setVizOffset({ x: vizPanStartRef.current.ox + dx, y: vizPanStartRef.current.oy + dy });
-              }}
-              onMouseUp={() => {
-                setVizIsPanning(false);
-                vizPanStartRef.current = null;
-              }}
-              onMouseLeave={() => {
-                setVizIsPanning(false);
-                vizPanStartRef.current = null;
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  left: 12,
-                  top: 12,
-                  display: "flex",
-                  gap: 6,
-                  alignItems: "center",
-                  padding: "6px 12px",
-                  borderRadius: 16,
-                  border: "1px solid var(--ui-canvas-line)",
-                  background: "var(--ui-canvas-panel)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                  fontSize: 12,
-                  color: "var(--ui-canvas-ink-2)",
-                  fontFamily: "'JetBrains Mono', monospace",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-                }}
-              >
-                <span style={{ color: "var(--ui-canvas-ink)", fontWeight: 600, minWidth: 56 }}>
-                  {Math.round(vizScale * 100)}%
-                </span>
-                <div style={{ width: 1, height: 16, background: "var(--ui-canvas-line)", margin: "0 4px" }} />
-                <button
-                  style={{
-                    padding: "4px 10px",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    borderRadius: 8,
-                    border: "1px solid var(--ui-canvas-line)",
-                    background: "var(--ui-canvas-fill)",
-                    color: "var(--ui-canvas-ink)",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    lineHeight: 1,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "var(--ui-canvas-hover-fill)";
-                    e.currentTarget.style.borderColor = "var(--ui-canvas-hover-border)";
-                    e.currentTarget.style.color = "var(--ui-canvas-accent)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "var(--ui-canvas-fill)";
-                    e.currentTarget.style.borderColor = "var(--ui-canvas-line)";
-                    e.currentTarget.style.color = "var(--ui-canvas-ink-alt)";
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setVizScale((s) => Math.min(s + 0.1, 2));
-                  }}
-                >
-                  +
-                </button>
-                <button
-                  style={{
-                    padding: "4px 10px",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    borderRadius: 8,
-                    border: "1px solid var(--ui-canvas-line)",
-                    background: "var(--ui-canvas-fill)",
-                    color: "var(--ui-canvas-ink)",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    lineHeight: 1,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "var(--ui-canvas-hover-fill)";
-                    e.currentTarget.style.borderColor = "var(--ui-canvas-hover-border)";
-                    e.currentTarget.style.color = "var(--ui-canvas-accent)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "var(--ui-canvas-fill)";
-                    e.currentTarget.style.borderColor = "var(--ui-canvas-line)";
-                    e.currentTarget.style.color = "var(--ui-canvas-ink-alt)";
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setVizScale((s) => Math.max(s - 0.1, 0.5));
-                  }}
-                >
-                  −
-                </button>
-                <button
-                  style={{
-                    padding: "4px 10px",
-                    fontSize: 12,
-                    fontWeight: 500,
-                    borderRadius: 8,
-                    border: "1px solid var(--ui-canvas-line)",
-                    background: "var(--ui-canvas-fill)",
-                    color: "var(--ui-canvas-ink)",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    lineHeight: 1,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "var(--ui-canvas-hover-fill)";
-                    e.currentTarget.style.borderColor = "var(--ui-canvas-hover-border)";
-                    e.currentTarget.style.color = "var(--ui-canvas-accent)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "var(--ui-canvas-fill)";
-                    e.currentTarget.style.borderColor = "var(--ui-canvas-line)";
-                    e.currentTarget.style.color = "var(--ui-canvas-ink-alt)";
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setVizScale(0.9);
-                    setVizOffset({ x: 0, y: 0 });
-                  }}
-                >
-                  {t.reset}
-                </button>
-                <div style={{ width: 1, height: 16, background: "var(--ui-canvas-line)", margin: "0 4px" }} />
-                <span style={{ fontSize: 12, color: "var(--ui-canvas-ink-2)" }}>{t.scrollZoomHint}</span>
-              </div>
-
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  transform: `translate(${vizOffset.x}px, ${vizOffset.y}px) scale(${vizScale})`,
-                  transformOrigin: "center center",
-                  transition: vizIsPanning ? "none" : "transform 120ms ease-out",
-                }}
-              >
-                <svg
-                  width={vizSize.width}
-                  height={vizSize.height}
-                  style={{ position: "absolute", inset: 0 }}
-                >
-                  <g>
-                    {vizLayout.edges.map((edge) => {
-                      const from = vizLayout.positions.get(edge.fromId);
-                      const to = vizLayout.positions.get(edge.toId);
-                      if (!from || !to) return null;
-                      const midY = (from.y + to.y) / 2;
-                      const path = `M ${from.x} ${from.y} L ${from.x} ${midY} L ${to.x} ${midY} L ${to.x} ${to.y}`;
-                      return (
-                        <path
-                          key={`${edge.fromId}-${edge.toId}`}
-                          d={path}
-                          stroke="var(--ui-canvas-edge)"
-                          strokeWidth={1.2}
-                          fill="none"
-                        />
-                      );
-                    })}
-                  </g>
-                  <AnimatePresence>
-                    {vizBeams.map((beam) => {
-                      const from = vizLayout.positions.get(beam.fromId);
-                      const to = vizLayout.positions.get(beam.toId);
-                      if (!from || !to) return null;
-                      const color = beam.kind === "create" ? "#3b82f6" : "#ffffff";
-                      return (
-                        <motion.g
-                          key={beam.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 0.9 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.6 }}
-                        >
-                          <motion.line
-                            x1={from.x}
-                            y1={from.y}
-                            x2={to.x}
-                            y2={to.y}
-                            stroke={color}
-                            strokeWidth={beam.kind === "create" ? 2.5 : 1.6}
-                            strokeDasharray={beam.kind === "create" ? "8 6" : "0"}
-                            initial={{ pathLength: 0, opacity: 0 }}
-                            animate={{ pathLength: 1, opacity: beam.kind === "create" ? 0.5 : 0.35 }}
-                            transition={{ duration: 0.5 }}
-                          />
-                          <motion.circle
-                            r={beam.kind === "create" ? 7 : 4}
-                            fill={color}
-                            initial={{ cx: from.x, cy: from.y }}
-                            animate={{ cx: to.x, cy: to.y }}
-                            transition={{ duration: 0.8, ease: "easeInOut" }}
-                            style={{ filter: `drop-shadow(0 0 ${beam.kind === "create" ? "12px" : "5px"} ${color})` }}
-                          />
-                          {beam.label ? (
-                            <foreignObject
-                              x={(from.x + to.x) / 2 - 80}
-                              y={(from.y + to.y) / 2 - 40}
-                              width={160}
-                              height={40}
-                            >
-                              <div
-                                style={{
-                                  fontSize: 12,
-                                  fontWeight: 700,
-                                  color: beam.kind === "create" ? "var(--ui-canvas-beam-create-ink)" : "var(--ui-canvas-ink-alt)",
-                                  border: `1px solid ${beam.kind === "create" ? "var(--ui-canvas-beam-create-border)" : "var(--ui-canvas-beam-border)"}`,
-                                  background:
-                                    beam.kind === "create"
-                                      ? "var(--ui-canvas-beam-create-bg)"
-                                      : "var(--ui-canvas-beam-bg)",
-                                  borderRadius: 999,
-                                  padding: "4px 8px",
-                                  textAlign: "center",
-                                }}
-                              >
-                                {beam.kind === "create" ? `create_agent(${beam.label})` : "send_message"}
-                              </div>
-                            </foreignObject>
-                          ) : null}
-                        </motion.g>
-                      );
-                    })}
-                  </AnimatePresence>
-                </svg>
-
-                {vizLayout.ordered.map((agent) => {
-                  const pos = vizLayout.positions.get(agent.id);
-                  if (!pos) return null;
-                  const status = agentStatusById[agent.id] ?? "IDLE";
-                  const ring = statusColor(status);
-                  const isHuman = agent.role === "human";
-                  const isActive = streamAgentId === agent.id;
-                  const Icon =
-                    agent.role === "productmanager"
-                      ? Briefcase
-                      : agent.role === "coder"
-                        ? Code2
-                        : agent.role === "assistant"
-                          ? Network
-                          : User;
-                  return (
-                    <motion.div
-                      key={agent.id}
-                      initial={{ scale: 0, opacity: 0, x: pos.x, y: pos.y }}
-                      animate={{ scale: 1, opacity: 1, x: pos.x, y: pos.y }}
-                      transition={{ type: "spring", stiffness: 220, damping: 18 }}
-                      className={cx("viz-node", isActive && "active")}
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        top: 0,
-                        width: 90,
-                        height: 90,
-                        marginLeft: -45,
-                        marginTop: -45,
-                        cursor: "grab",
-                      }}
-                      title={agent.id}
-                      onPointerDown={(e) => handleNodePointerDown(agent.id, e)}
-                      onMouseDown={(e) => handleNodeMouseDown(agent.id, e)}
-                      onTouchStart={(e) => handleNodeTouchStart(agent.id, e)}
-                    >
-                      {isActive ? (
-                        <div className="viz-reticle">
-                          <div className="viz-reticle-pulse" />
-                        </div>
-                      ) : null}
-                      <div
-                        style={{
-                          width: 90,
-                          height: 90,
-                          borderRadius: "50%",
-                          border: `2px solid ${ring}`,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          background: "var(--ui-canvas-node)",
-                          boxShadow: `0 0 30px ${ring}55`,
-                          position: "relative",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 70,
-                            height: 70,
-                            borderRadius: "50%",
-                            border: `2px solid ${isHuman ? "#f8fafc" : "#4ade80"}`,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: "var(--ui-canvas-node-2)",
-                          }}
-                        >
-                          <Icon size={20} color={isHuman ? "#f8fafc" : "#e4e4e7"} />
-                        </div>
-                        {status === "BUSY" ? (
-                          <motion.div
-                            style={{
-                              position: "absolute",
-                              inset: 6,
-                              borderRadius: "50%",
-                              border: "2px solid #ef4444",
-                              borderTopColor: "transparent",
-                              borderRightColor: "transparent",
-                            }}
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                          />
-                        ) : null}
-                      </div>
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: 94,
-                          left: "50%",
-                          transform: "translateX(-50%)",
-                          textAlign: "center",
-                          width: 120,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: "var(--ui-canvas-ink)",
-                        }}
-                      >
-                        {agent.role}
-                        <div style={{ fontSize: 12, color: ring, marginTop: 2 }}>{status}</div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className={cx("viz-events", vizEventsCollapsed && "collapsed")}>
-              {!vizEventsCollapsed ? (
-                <>
-                  <div style={{ fontWeight: 700, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span>{t.eventStream}</span>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span className="muted mono">{vizEvents.length}</span>
-                      <button
-                        type="button"
-                        className="viz-events-toggle"
-                        onClick={() => setVizEventsCollapsed(true)}
-                        title={t.collapse}
-                      >
-                        <ChevronRight size={14} />
-                      </button>
-                    </div>
-                  </div>
-                  {vizEvents.length === 0 ? (
-                    <div className="muted">{t.noEvents}</div>
-                  ) : (
-                    vizEvents
-                      .slice(-6)
-                      .reverse()
-                      .map((evt) => (
-                        <div
-                          key={evt.id}
-                          style={{
-                            marginBottom: 8,
-                            paddingBottom: 8,
-                            borderBottom: "1px solid var(--ui-canvas-divider)",
-                          }}
-                        >
-                          <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                            <span
-                              style={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: 999,
-                                background:
-                                  evt.kind === "agent"
-                                    ? "#60a5fa"
-                                    : evt.kind === "message"
-                                      ? "#fbbf24"
-                                      : evt.kind === "llm"
-                                        ? "#38bdf8"
-                                        : evt.kind === "tool"
-                                          ? "#f97316"
-                                          : "#a855f7",
-                                boxShadow: "0 0 8px rgba(0,0,0,0.5)",
-                              }}
-                            />
-                            <span>{evt.label}</span>
-                          </div>
-                          <div className="muted mono" style={{ fontSize: 12, marginTop: 4 }}>
-                            {new Date(evt.at).toLocaleTimeString()}
-                          </div>
-                        </div>
-                      ))
-                  )}
-                </>
-              ) : null}
-            </div>
-            {vizEventsCollapsed ? (
-              <button
-                type="button"
-                className="viz-events-toggle floating"
-                onClick={() => setVizEventsCollapsed(false)}
-                title={t.expand}
-              >
-                <ChevronLeft size={14} />
-              </button>
-            ) : null}
-          </div>
-        </div>
-
-        {error ? <div className="toast">{error}</div> : null}
-
-        <div className="composer">
-          <textarea
-            className="input textarea"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder={t.messagePlaceholder}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                void onSend();
-              }
+            style={{
+              height: 40,
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0 12px",
+              borderBottom: "1px solid var(--ui-border-2)",
+              background: "var(--ui-topbar)",
             }}
-          />
-          <button className="btn btn-primary" onClick={() => void onSend()} disabled={!draft.trim() || status === "send"}>
-            {t.send}
-          </button>
-        </div>
-        </>
-        )}
-      </main>
-      }
-      right={
-        <>
-          <ResearchBriefing
-            groupId={activeGroupId}
-            workspaceId={session?.workspaceId ?? null}
-            humanAgentId={session?.humanAgentId ?? null}
-            refreshToken={researchTick}
-            topology={
-              <PixelAgentGraph
-                compact
-                agents={agents.map(a => ({
-                  id: a.id,
-                  name: a.role,
-                  role: a.role,
-                  status: agentStatusById[a.id] === "BUSY" ? "running" :
-                         agentStatusById[a.id] === "WAKING" ? "thinking" :
-                         a.role === "human" ? "idle" : "offline",
-                  parentId: a.parentId ?? undefined,
-                }))}
-                onAgentClick={(id) => console.log("Agent clicked:", id)}
-              />
-            }
-          />
-          {isSettingsOpen && (
-            <div className="modal-overlay" style={{ position: "fixed", inset: 0, background: "var(--ui-overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
-              <div className="card" style={{ width: 460, maxWidth: "100%", background: "var(--ui-surface-2)", padding: 24, borderRadius: 8 }}>
-                <div style={{ fontWeight: 700, fontSize: 24, marginBottom: 16 }}>{t.llmProviderSettings}</div>
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.provider}</label>
-                  <select
+          >
+            <div style={{ fontWeight: 600, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {title}
+            </div>
+            <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
+              {(["chat", "canvas"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  style={{
+                    padding: "2px 9px",
+                    fontSize: 11,
+                    borderRadius: 5,
+                    cursor: "pointer",
+                    background: viewMode === mode ? "rgba(14,165,233,0.12)" : "var(--ui-fill)",
+                    color: viewMode === mode ? "#0ea5e9" : "var(--ui-muted)",
+                    border: `1px solid ${viewMode === mode ? "rgba(14,165,233,0.3)" : "var(--ui-border-2)"}`,
+                    fontWeight: viewMode === mode ? 600 : 400,
+                    fontFamily: wbFont,
+                  }}
+                  onClick={() => setViewMode(mode)}
+                >
+                  {mode === "chat" ? "聊天" : "拓扑"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {viewMode === "canvas" ? (
+            /* Topology view — React Flow */
+            <SwarmGraph
+              style={{ flex: 1 }}
+              agents={agents.map((a) => ({
+                id: a.id,
+                role: a.role,
+                parentId: a.parentId,
+                status: agentStatusById[a.id],
+              }))}
+              onAgentSelect={(agentId) => {
+                const g = groupByAgentId.get(agentId);
+                if (g) setActiveGroupId(g.id);
+              }}
+              selectedAgentId={(() => {
+                if (!activeGroupId || !session) return null;
+                const g = groups.find((gr) => gr.id === activeGroupId);
+                return g?.memberIds.find((id) => id !== session.humanAgentId) ?? null;
+              })()}
+            />
+          ) : (
+            /* Chat view */
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+              <div
+                className="chat"
+                style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "8px 0" }}
+              >
+                <IMMessageList
+                  messages={messages}
+                  humanAgentId={session?.humanAgentId ?? null}
+                  agentRoleById={agentRoleById}
+                  fmtTime={fmtTime}
+                  renderContent={(content) => <MarkdownContent content={content} />}
+                  cx={cx}
+                />
+                <div ref={bottomRef} />
+              </div>
+
+              {/* Composer */}
+              <div
+                style={{
+                  flexShrink: 0,
+                  padding: "10px 12px",
+                  borderTop: "1px solid var(--ui-border-2)",
+                  background: "var(--ui-topbar)",
+                }}
+              >
+                <div style={{ display: "flex", gap: 8 }}>
+                  <textarea
+                    ref={composerRef}
                     className="input"
-                    value={appSettings?.llmProvider || "minimax"}
-                    onChange={(e) => setAppSettings({ ...appSettings, llmProvider: e.target.value as AppSettings["llmProvider"] })}
-                    style={{ width: "100%", padding: "8px 12px", background: "var(--ui-surface-3)", color: "var(--ink)", border: "1px solid var(--ui-border-3)", borderRadius: 8 }}
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    placeholder={t.messagePlaceholder}
+                    rows={2}
+                    style={{ flex: 1, resize: "none", borderRadius: 8, padding: "7px 10px", fontSize: 13, lineHeight: 1.5, fontFamily: wbFont }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        void onSend();
+                      }
+                    }}
+                  />
+                  <button
+                    className="btn btn-primary"
+                    style={{ alignSelf: "flex-end", padding: "7px 14px", flexShrink: 0 }}
+                    onClick={() => void onSend()}
+                    disabled={!draft.trim() || status === "send"}
                   >
-                    <option value="minimax">MiniMax</option>
-                    <option value="ark">Ark (Volcengine)</option>
-                    <option value="openrouter">OpenRouter</option>
-                  </select>
-                </div>
-                {(appSettings?.llmProvider === "ark" || (!appSettings?.llmProvider && true)) && (
-                  <>
-                    <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.apiKey}</label>
-                      <input className="input" type="password" placeholder={appSettings?.arkApiKeyConfigured ? t.apiKeyConfigured : t.arkApiKeyPlaceholder} value={appSettings?.arkApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, arkApiKey: e.target.value })} autoComplete="off" />
-                    </div>
-                    <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.model}</label>
-                      <input className="input" placeholder="kimi-k2.5" value={appSettings?.arkModel || ""} onChange={(e) => setAppSettings({ ...appSettings, arkModel: e.target.value })} />
-                    </div>
-                  </>
-                )}
-                {appSettings?.llmProvider === "openrouter" && (
-                  <>
-                    <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.apiKey}</label>
-                      <input className="input" type="password" placeholder={appSettings?.openRouterApiKeyConfigured ? t.apiKeyConfigured : t.openRouterApiKeyPlaceholder} value={appSettings?.openRouterApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, openRouterApiKey: e.target.value })} autoComplete="off" />
-                    </div>
-                    <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.model}</label>
-                      <input className="input" placeholder="openai/gpt-4o" value={appSettings?.openRouterModel || ""} onChange={(e) => setAppSettings({ ...appSettings, openRouterModel: e.target.value })} />
-                    </div>
-                  </>
-                )}
-                {appSettings?.llmProvider === "minimax" && (
-                  <>
-                    <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.apiKey}</label>
-                      <input className="input" type="password" placeholder={appSettings?.minimaxApiKeyConfigured ? t.apiKeyConfigured : t.minimaxApiKeyPlaceholder} value={appSettings?.minimaxApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, minimaxApiKey: e.target.value })} autoComplete="off" />
-                    </div>
-                    <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.model}</label>
-                      <input className="input" placeholder="MiniMax-M2.1" value={appSettings?.minimaxModel || ""} onChange={(e) => setAppSettings({ ...appSettings, minimaxModel: e.target.value })} />
-                    </div>
-                  </>
-                )}
-                <div style={{ marginBottom: 12, marginTop: 8 }}>
-                  <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--ink)" }}>
-                    <input
-                      type="checkbox"
-                      checked={Boolean(appSettings?.allowHostBash)}
-                      onChange={(e) => setAppSettings({ ...appSettings, allowHostBash: e.target.checked })}
-                      style={{ marginTop: 2 }}
-                    />
-                    <span>
-                      {t.allowHostBash}
-                      <span style={{ display: "block", marginTop: 4, fontSize: 12, color: "var(--ink-2)" }}>
-                        {t.allowHostBashHint}
-                      </span>
-                    </span>
-                  </label>
-                </div>
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 24 }}>
-                  <button className="btn" onClick={() => setIsSettingsOpen(false)}>{t.cancel}</button>
-                  <button className="btn btn-primary" onClick={() => handleSaveSettings(appSettings!)}>{t.saveChanges}</button>
+                    {t.send}
+                  </button>
                 </div>
               </div>
             </div>
           )}
-          <style jsx global>{`
-            @keyframes viz-dash {
-              from {
-                stroke-dashoffset: 18;
-              }
-              to {
-                stroke-dashoffset: 0;
-              }
-            }
-          `}</style>
-        </>
-      }
-      focusMode={focusMode}
-      onFocusModeChange={setFocusMode}
-      leftWidth={leftPanelWidth}
-      rightWidth={rightPanelWidth}
-      onLeftWidthChange={setLeftPanelWidth}
-      onRightWidthChange={setRightPanelWidth}
-    />
+        </Panel>
+
+        <PanelResizeHandle
+          style={{
+            width: 4,
+            background: "transparent",
+            cursor: "col-resize",
+            flexShrink: 0,
+            borderLeft: "1px solid var(--ui-border-2)",
+          }}
+          
+        />
+
+        {/* RIGHT: Research Inspector */}
+        <Panel
+          defaultSize={27}
+          minSize={20}
+          maxSize={40}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            background: "var(--ui-shell)",
+            borderLeft: "1px solid var(--ui-border-2)",
+          }}
+        >
+          <ResearchWorkbench
+            groupId={activeGroupId}
+            workspaceId={session?.workspaceId ?? null}
+            humanAgentId={session?.humanAgentId ?? null}
+            refreshToken={researchTick}
+          />
+        </Panel>
+      </PanelGroup>
+
+      {/* Toasts */}
+      {error && <div className="toast">{error}</div>}
+      {settingsNotice && <div className="toast toast-ok">{settingsNotice}</div>}
+
+      {/* Settings Modal */}
+      {isSettingsOpen && (
+        <div
+          className="modal-overlay"
+          style={{ position: "fixed", inset: 0, background: "var(--ui-overlay)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}
+        >
+          <div className="card" style={{ width: 460, maxWidth: "90vw", background: "var(--ui-surface-2)", padding: 24, borderRadius: 8 }}>
+            <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 16 }}>{t.llmProviderSettings}</div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.provider}</label>
+              <select
+                className="input"
+                value={appSettings?.llmProvider || "minimax"}
+                onChange={(e) => setAppSettings({ ...appSettings, llmProvider: e.target.value as AppSettings["llmProvider"] })}
+                style={{ width: "100%", padding: "8px 12px", background: "var(--ui-surface-3)", color: "var(--ink)", border: "1px solid var(--ui-border-3)", borderRadius: 8 }}
+              >
+                <option value="minimax">MiniMax</option>
+                <option value="ark">Ark (Volcengine)</option>
+                <option value="openrouter">OpenRouter</option>
+              </select>
+            </div>
+            {(appSettings?.llmProvider === "ark" || !appSettings?.llmProvider) && (
+              <>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.apiKey}</label>
+                  <input className="input" type="password" placeholder={appSettings?.arkApiKeyConfigured ? t.apiKeyConfigured : t.arkApiKeyPlaceholder} value={appSettings?.arkApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, arkApiKey: e.target.value })} autoComplete="off" />
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.model}</label>
+                  <input className="input" placeholder="kimi-k2.5" value={appSettings?.arkModel || ""} onChange={(e) => setAppSettings({ ...appSettings, arkModel: e.target.value })} />
+                </div>
+              </>
+            )}
+            {appSettings?.llmProvider === "openrouter" && (
+              <>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.apiKey}</label>
+                  <input className="input" type="password" placeholder={appSettings?.openRouterApiKeyConfigured ? t.apiKeyConfigured : t.openRouterApiKeyPlaceholder} value={appSettings?.openRouterApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, openRouterApiKey: e.target.value })} autoComplete="off" />
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.model}</label>
+                  <input className="input" placeholder="openai/gpt-4o" value={appSettings?.openRouterModel || ""} onChange={(e) => setAppSettings({ ...appSettings, openRouterModel: e.target.value })} />
+                </div>
+              </>
+            )}
+            {appSettings?.llmProvider === "minimax" && (
+              <>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.apiKey}</label>
+                  <input className="input" type="password" placeholder={appSettings?.minimaxApiKeyConfigured ? t.apiKeyConfigured : t.minimaxApiKeyPlaceholder} value={appSettings?.minimaxApiKey || ""} onChange={(e) => setAppSettings({ ...appSettings, minimaxApiKey: e.target.value })} autoComplete="off" />
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: "block", marginBottom: 6, fontSize: 13, color: "var(--ink-2)" }}>{t.model}</label>
+                  <input className="input" placeholder="MiniMax-M2.1" value={appSettings?.minimaxModel || ""} onChange={(e) => setAppSettings({ ...appSettings, minimaxModel: e.target.value })} />
+                </div>
+              </>
+            )}
+            <div style={{ marginBottom: 12, marginTop: 8 }}>
+              <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--ink)" }}>
+                <input type="checkbox" checked={Boolean(appSettings?.allowHostBash)} onChange={(e) => setAppSettings({ ...appSettings, allowHostBash: e.target.checked })} style={{ marginTop: 2 }} />
+                <span>
+                  {t.allowHostBash}
+                  <span style={{ display: "block", marginTop: 4, fontSize: 12, color: "var(--ink-2)" }}>{t.allowHostBashHint}</span>
+                </span>
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 20 }}>
+              <button className="btn" onClick={() => setIsSettingsOpen(false)}>{t.cancel}</button>
+              <button className="btn btn-primary" disabled={settingsSaving || !appSettings} onClick={() => handleSaveSettings(appSettings!)}>
+                {settingsSaving ? t.savingSettings : t.saveChanges}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ⌘K Command Palette */}
+      <CommandPalette
+        open={cmdOpen}
+        onOpenChange={setCmdOpen}
+        agents={agents.map((a) => ({ id: a.id, role: a.role }))}
+        onSelectAgent={(agentId) => {
+          const g = groupByAgentId.get(agentId);
+          if (g) setActiveGroupId(g.id);
+        }}
+        onFocusComposer={() => composerRef.current?.focus()}
+      />
+    </div>
   );
 }

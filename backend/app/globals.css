@@ -2,6 +2,47 @@
 @import "tailwindcss";
 @source "../node_modules/streamdown/dist/*.js";
 
+/* ==================== WORKBENCH THEME (clean, no cyber purple) ==================== */
+:root {
+  /* Workbench accent: sky blue, restrained */
+  --wb-accent: #0ea5e9;
+  --wb-accent-bg: rgba(14, 165, 233, 0.1);
+  --wb-accent-border: rgba(14, 165, 233, 0.25);
+  --wb-accent-text: #0369a1;
+
+  /* Workbench surfaces: near-white */
+  --wb-bg: #f8fafc;
+  --wb-surface: #ffffff;
+  --wb-shell: rgba(248, 250, 252, 0.95);
+  --wb-border: #e2e8f0;
+
+  /* Research credibility colors */
+  --wb-verified: #059669;
+  --wb-challenged: #d97706;
+  --wb-unverified: #6b7280;
+}
+
+[data-theme="dark"] {
+  --wb-accent: #38bdf8;
+  --wb-accent-bg: rgba(56, 189, 248, 0.1);
+  --wb-accent-border: rgba(56, 189, 248, 0.25);
+  --wb-accent-text: #7dd3fc;
+
+  --wb-bg: #0f172a;
+  --wb-surface: #1e293b;
+  --wb-shell: rgba(15, 23, 42, 0.95);
+  --wb-border: #334155;
+
+  --wb-verified: #34d399;
+  --wb-challenged: #fbbf24;
+  --wb-unverified: #94a3b8;
+}
+
+/* react-resizable-panels: resize handle visual */
+[data-panel-group-direction="horizontal"] > [data-panel-resize-handle-id]:hover {
+  background: var(--wb-accent-bg) !important;
+}
+
 /* ==================== SWARM-IDE DARK DESIGN SYSTEM ==================== */
 :root {
   /* Swarm-IDE Dark Theme (New) */
@@ -1269,6 +1310,18 @@ textarea {
   margin: 12px 16px 0;
   font-size: 13px;
   box-shadow: var(--shadow-md);
+}
+
+.toast-ok {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  margin: 0;
+  border-color: #16a34a;
+  background: rgba(22, 163, 74, 0.12);
+  color: #15803d;
 }
 
 /* ==================== SCROLLBAR ==================== */
